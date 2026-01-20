@@ -136,6 +136,10 @@ app.get('/api/resources', authMiddleware, async (req, res) => {
     }
 });
 
+// Routes API
+app.use('/api/resources', resourceRoutes);
+
+// Lancement du serveur (Version standard)
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Serveur lancé sur http://localhost:${PORT}`);
 });
