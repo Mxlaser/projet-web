@@ -9,11 +9,31 @@ export default function TodoListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
 
   const toggleTodo = (id) => {
     setTodos(todos.map(todo => 
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
+  };
+
+  const handleCreateNote = () => {
+    if (newNoteTitle.trim()) {
+      const newTodo = {
+        id: todos.length > 0 ? Math.max(...todos.map(t => t.id)) + 1 : 1,
+        text: newNoteTitle.trim(),
+        completed: false,
+      };
+      setTodos([...todos, newTodo]);
+      setNewNoteTitle('');
+      setIsModalOpen(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setNewNoteTitle('');
+    setIsModalOpen(false);
   };
 
   const filteredTodos = todos.filter(todo => {
@@ -286,7 +306,10 @@ export default function TodoListPage() {
         </div>
 
         {/* Floating Add Button */}
-        <button className="fixed bottom-8 right-8 w-[50px] h-[50px] bg-[#6c63ff] rounded-full flex items-center justify-center shadow-lg hover:bg-[#5a52e0] transition-colors hover:scale-110">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="fixed bottom-8 right-8 w-[50px] h-[50px] bg-[#6c63ff] rounded-full flex items-center justify-center shadow-lg hover:bg-[#5a52e0] transition-colors hover:scale-110 z-20"
+        >
           <svg
             className="w-6 h-6 text-[#f7f7f7]"
             fill="none"
@@ -302,6 +325,77 @@ export default function TodoListPage() {
           </svg>
         </button>
       </div>
+
+      {/* Modal for Creating New Note */}
+      {isModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={handleCancel}
+        >
+          <div 
+            className="bg-white rounded-[16px] p-6 w-full max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-[#252525]">
+                Créer une nouvelle note
+              </h2>
+              <button
+                onClick={handleCancel}
+                className="w-6 h-6 flex items-center justify-center text-[#252525] hover:text-[#6c63ff] transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Input Field */}
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="Titre de la note"
+                value={newNoteTitle}
+                onChange={(e) => setNewNoteTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCreateNote();
+                  }
+                }}
+                className="w-full h-12 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+                autoFocus
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 justify-end">
+              <button
+                onClick={handleCancel}
+                className="px-6 py-2 rounded-[5px] border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium uppercase hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCreateNote}
+                className="px-6 py-2 rounded-[5px] bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium uppercase hover:bg-[#5a52e0] transition-colors"
+              >
+                Créer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
