@@ -10,7 +10,10 @@ export default function TodoListPage() {
   const [filter, setFilter] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const toggleTodo = (id) => {
     setTodos(todos.map(todo => 
@@ -36,6 +39,20 @@ export default function TodoListPage() {
     setIsModalOpen(false);
   };
 
+  const handleCreateCategory = () => {
+    if (newCategoryName.trim()) {
+      // TODO: Implémenter la logique de création de catégorie
+      console.log('Création de catégorie:', newCategoryName.trim());
+      setNewCategoryName('');
+      setIsCategoryModalOpen(false);
+    }
+  };
+
+  const handleCancelCategory = () => {
+    setNewCategoryName('');
+    setIsCategoryModalOpen(false);
+  };
+
   const filteredTodos = todos.filter(todo => {
     const matchesSearch = todo.text.toLowerCase().includes(searchQuery.toLowerCase());
     if (filter === 'completed') return matchesSearch && todo.completed;
@@ -46,13 +63,16 @@ export default function TodoListPage() {
   return (
     <div 
       className="min-h-screen bg-[#f7f7f7] flex flex-col items-center py-10 px-4"
-      onClick={() => isDropdownOpen && setIsDropdownOpen(false)}
+      onClick={() => {
+        if (isDropdownOpen) setIsDropdownOpen(false);
+        if (isFabMenuOpen) setIsFabMenuOpen(false);
+      }}
     >
       <div className="w-full max-w-3xl">
         {/* Header */}
         <div className="flex flex-col items-center gap-4 mb-8">
           <h1 className="text-[26px] font-medium text-[#252525] uppercase">
-            TODO LIST
+            Vos ressources
           </h1>
 
           {/* Search and Filter Bar */}
@@ -80,6 +100,26 @@ export default function TodoListPage() {
                 />
               </svg>
             </div>
+
+            {/* Add Button */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="w-[38px] h-[38px] bg-[#6c63ff] rounded-[5px] flex items-center justify-center hover:bg-[#5a52e0] transition-colors"
+            >
+              <svg
+                className="w-5 h-5 text-[#f7f7f7]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </button>
 
             {/* Filter Dropdown */}
             <div className="relative" onClick={(e) => e.stopPropagation()}>
@@ -219,7 +259,7 @@ export default function TodoListPage() {
           </div>
         </div>
 
-        {/* Todo List */}
+        {/* Vos ressources */}
         <div className="relative w-full">
           <div className="space-y-0">
             {filteredTodos.map((todo, index) => (
@@ -307,8 +347,11 @@ export default function TodoListPage() {
 
         {/* Floating Add Button */}
         <button 
-          onClick={() => setIsModalOpen(true)}
-          className="fixed bottom-8 right-8 w-[50px] h-[50px] bg-[#6c63ff] rounded-full flex items-center justify-center shadow-lg hover:bg-[#5a52e0] transition-colors hover:scale-110 z-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFabMenuOpen(!isFabMenuOpen);
+          }}
+          className="fixed bottom-8 right-8 w-[50px] h-[50px] bg-[#6c63ff] rounded-full flex items-center justify-center shadow-lg hover:bg-[#5a52e0] transition-transform transition-colors hover:scale-110 z-30"
         >
           <svg
             className="w-6 h-6 text-[#f7f7f7]"
@@ -324,6 +367,33 @@ export default function TodoListPage() {
             />
           </svg>
         </button>
+
+        {/* Floating Add Menu */}
+        {isFabMenuOpen && (
+          <div
+            className="fixed bottom-24 right-8 flex flex-col gap-2 z-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                setIsFabMenuOpen(false);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-[8px] bg-white shadow-lg border border-[#e5e7eb] text-sm text-[#252525] hover:bg-[#f3f4ff] transition transform origin-bottom-right translate-y-1 opacity-100"
+            >
+              Ajouter une ressource
+            </button>
+            <button
+              onClick={() => {
+                setIsFabMenuOpen(false);
+                setIsCategoryModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-[8px] bg-white shadow-lg border border-[#e5e7eb] text-sm text-[#252525] hover:bg-[#f3f4ff] transition transform origin-bottom-right translate-y-1 opacity-100"
+            >
+              Créer une catégorie
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal for Creating New Note */}
@@ -339,7 +409,7 @@ export default function TodoListPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-[#252525]">
-                Créer une nouvelle note
+                Créer une nouvelle ressource
               </h2>
               <button
                 onClick={handleCancel}
@@ -388,6 +458,77 @@ export default function TodoListPage() {
               </button>
               <button
                 onClick={handleCreateNote}
+                className="px-6 py-2 rounded-[5px] bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium uppercase hover:bg-[#5a52e0] transition-colors"
+              >
+                Créer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Creating New Category */}
+      {isCategoryModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={handleCancelCategory}
+        >
+          <div 
+            className="bg-white rounded-[16px] p-6 w-full max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-[#252525]">
+                Créer une nouvelle catégorie
+              </h2>
+              <button
+                onClick={handleCancelCategory}
+                className="w-6 h-6 flex items-center justify-center text-[#252525] hover:text-[#6c63ff] transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Input Field */}
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="Nom de la catégorie"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCreateCategory();
+                  }
+                }}
+                className="w-full h-12 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+                autoFocus
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 justify-end">
+              <button
+                onClick={handleCancelCategory}
+                className="px-6 py-2 rounded-[5px] border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium uppercase hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCreateCategory}
                 className="px-6 py-2 rounded-[5px] bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium uppercase hover:bg-[#5a52e0] transition-colors"
               >
                 Créer
