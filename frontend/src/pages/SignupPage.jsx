@@ -1,4 +1,4 @@
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#f7f7f7] flex flex-col items-center justify-start">
       {/* Logo */}
@@ -10,7 +10,7 @@ export default function LoginPage() {
 
         {/* Titre */}
         <h1 className="text-4xl font-semibold text-[#252525] mt-6">
-          Connexion
+          Inscription
         </h1>
       </div>
 
@@ -36,11 +36,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Lien d'inscription */}
+        {/* Lien de connexion */}
         <p className="mt-6 text-center text-xs italic text-[#cccccc]">
-          Pas encore de compte ?{" "}
-          <a href="/signup" className="text-[#6c63ff] underline">
-            Inscrivez-vous
+          Déjà un compte ?{" "}
+          <a href="/login" className="text-[#6c63ff] underline">
+            Connectez-vous
           </a>
         </p>
       </div>
