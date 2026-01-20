@@ -2,20 +2,32 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const AuthContext = createContext(null);
 
+function sanitizeToken(raw) {
+  if (!raw) return null;
+  const t = String(raw).trim();
+  if (t === "" || t === "undefined" || t === "null") return null;
+  return t;
+}
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [token, setToken] = useState(() => sanitizeToken(localStorage.getItem("token")));
   const isAuthenticated = !!token;
 
   useEffect(() => {
-    if (token) localStorage.setItem("token", token);
+    const clean = sanitizeToken(token);
+
+    if (clean) localStorage.setItem("token", clean);
     else localStorage.removeItem("token");
+
+    if (clean !== token) setToken(clean);
   }, [token]);
 
   const value = useMemo(
     () => ({
       token,
       isAuthenticated,
-      setToken,
+      setToken: (t) => setToken(sanitizeToken(t)),
+      setAuthToken: (t) => setToken(sanitizeToken(t)), 
       logout: () => setToken(null),
     }),
     [token, isAuthenticated]
