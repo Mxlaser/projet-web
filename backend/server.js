@@ -9,6 +9,7 @@ const authMiddleware = require('./middleware/auth');
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_temporaire';
+const resourceRoutes = require('./routes/resourceRoutes');
 
 app.use(cors());
 app.use(express.json());
