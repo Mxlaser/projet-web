@@ -23,5 +23,13 @@ jobs:
       working-directory: ./backend
       run: npm ci
 
+    - name: Vérification Qualité (Lint)
+      working-directory: ./backend
+      run: npm run lint
+
+    - name: Tests Unitaires
+      working-directory: ./backend
+      run: npm test
+
     - name: Test Build Docker Backend
       run: docker build ./backend
