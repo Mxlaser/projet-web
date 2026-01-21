@@ -28,6 +28,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - ./backend/uploads:/app/uploads
 
 volumes:
   postgres_data:
