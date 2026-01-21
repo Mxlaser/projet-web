@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
@@ -30,7 +30,11 @@ export default function TodoListPage() {
   const [resources, setResources] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [selectedTag, setSelectedTag] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
+  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -170,28 +174,48 @@ export default function TodoListPage() {
     setIsCategoryModalOpen(false);
   };
 
+  // Récupérer tous les tags uniques
+  const allTags = useMemo(() => {
+    const tagSet = new Set();
+    resources.forEach(resource => {
+      resource.tags?.forEach(tag => tagSet.add(tag.name));
+    });
+    return Array.from(tagSet).sort();
+  }, [resources]);
+
   const filteredResources = resources.filter(resource => {
-    if (!searchQuery.trim()) {
-      const completed = getCompleted(resource);
-      if (filter === 'completed') return completed;
-      if (filter === 'active') return !completed;
-      return true;
+    // Filtre par statut (all/active/completed)
+    const completed = getCompleted(resource);
+    let matchesStatus = true;
+    if (filter === 'completed') matchesStatus = completed;
+    if (filter === 'active') matchesStatus = !completed;
+
+    // Filtre par catégorie
+    let matchesCategory = true;
+    if (selectedCategoryId !== null) {
+      matchesCategory = resource.categoryId === selectedCategoryId;
     }
 
-    const query = searchQuery.toLowerCase();
-    const titleMatch = resource.title.toLowerCase().includes(query);
-    const descriptionMatch = resource.content?.description?.toLowerCase().includes(query) || false;
-    const urlMatch = resource.content?.url?.toLowerCase().includes(query) || false;
-    const fileNameMatch = resource.content?.originalName?.toLowerCase().includes(query) || false;
-    const categoryMatch = resource.category?.name?.toLowerCase().includes(query) || false;
-    const tagsMatch = resource.tags?.some(tag => tag.name.toLowerCase().includes(query)) || false;
+    // Filtre par tag
+    let matchesTag = true;
+    if (selectedTag !== null) {
+      matchesTag = resource.tags?.some(tag => tag.name === selectedTag) || false;
+    }
 
-    const matchesSearch = titleMatch || descriptionMatch || urlMatch || fileNameMatch || categoryMatch || tagsMatch;
-    
-    const completed = getCompleted(resource);
-    if (filter === 'completed') return matchesSearch && completed;
-    if (filter === 'active') return matchesSearch && !completed;
-    return matchesSearch;
+    // Filtre par recherche textuelle
+    let matchesSearch = true;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const titleMatch = resource.title.toLowerCase().includes(query);
+      const descriptionMatch = resource.content?.description?.toLowerCase().includes(query) || false;
+      const urlMatch = resource.content?.url?.toLowerCase().includes(query) || false;
+      const fileNameMatch = resource.content?.originalName?.toLowerCase().includes(query) || false;
+      const categoryMatch = resource.category?.name?.toLowerCase().includes(query) || false;
+      const tagsMatch = resource.tags?.some(tag => tag.name.toLowerCase().includes(query)) || false;
+      matchesSearch = titleMatch || descriptionMatch || urlMatch || fileNameMatch || categoryMatch || tagsMatch;
+    }
+
+    return matchesStatus && matchesCategory && matchesTag && matchesSearch;
   });
 
   return (
@@ -199,6 +223,8 @@ export default function TodoListPage() {
       className="min-h-screen bg-[#f7f7f7] flex flex-col items-center py-10 px-4"
       onClick={() => {
         if (isDropdownOpen) setIsDropdownOpen(false);
+        if (isCategoryFilterOpen) setIsCategoryFilterOpen(false);
+        if (isTagFilterOpen) setIsTagFilterOpen(false);
         if (isFabMenuOpen) setIsFabMenuOpen(false);
       }}
     >
@@ -390,6 +416,179 @@ export default function TodoListPage() {
                 />
               </svg>
             </button>
+          </div>
+
+          {/* Filtres Catégorie et Tag */}
+          <div className="flex gap-3 items-center w-full flex-wrap">
+            {/* Filtre Catégorie */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => {
+                  setIsCategoryFilterOpen(!isCategoryFilterOpen);
+                  setIsTagFilterOpen(false);
+                }}
+                className={`px-4 py-2 rounded-[5px] text-sm font-medium transition-colors flex items-center gap-2 ${
+                  selectedCategoryId !== null
+                    ? 'bg-[#6c63ff] text-[#f7f7f7]'
+                    : 'bg-white border border-[#e5e7eb] text-[#374151] hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                {selectedCategoryId !== null
+                  ? categories.find(c => c.id === selectedCategoryId)?.name || 'Catégorie'
+                  : 'Toutes les catégories'}
+                <svg
+                  className={`w-3 h-3 transition-transform ${isCategoryFilterOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isCategoryFilterOpen && (
+                <div className="absolute top-full mt-1 left-0 bg-white border border-[#e5e7eb] rounded-[5px] shadow-md min-w-[200px] max-h-[300px] overflow-y-auto z-20">
+                  <button
+                    onClick={() => {
+                      setSelectedCategoryId(null);
+                      setIsCategoryFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                      selectedCategoryId === null
+                        ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
+                        : 'text-[#374151] hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Toutes les catégories</span>
+                      {selectedCategoryId === null && (
+                        <svg className="w-4 h-4 text-[#6c63ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        setSelectedCategoryId(category.id);
+                        setIsCategoryFilterOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        selectedCategoryId === category.id
+                          ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
+                          : 'text-[#374151] hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{category.name}</span>
+                        {selectedCategoryId === category.id && (
+                          <svg className="w-4 h-4 text-[#6c63ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Filtre Tag */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => {
+                  setIsTagFilterOpen(!isTagFilterOpen);
+                  setIsCategoryFilterOpen(false);
+                }}
+                className={`px-4 py-2 rounded-[5px] text-sm font-medium transition-colors flex items-center gap-2 ${
+                  selectedTag !== null
+                    ? 'bg-[#6c63ff] text-[#f7f7f7]'
+                    : 'bg-white border border-[#e5e7eb] text-[#374151] hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                {selectedTag !== null ? selectedTag : 'Tous les tags'}
+                <svg
+                  className={`w-3 h-3 transition-transform ${isTagFilterOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isTagFilterOpen && (
+                <div className="absolute top-full mt-1 left-0 bg-white border border-[#e5e7eb] rounded-[5px] shadow-md min-w-[200px] max-h-[300px] overflow-y-auto z-20">
+                  <button
+                    onClick={() => {
+                      setSelectedTag(null);
+                      setIsTagFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                      selectedTag === null
+                        ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
+                        : 'text-[#374151] hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Tous les tags</span>
+                      {selectedTag === null && (
+                        <svg className="w-4 h-4 text-[#6c63ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        setSelectedTag(tag);
+                        setIsTagFilterOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        selectedTag === tag
+                          ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
+                          : 'text-[#374151] hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>#{tag}</span>
+                        {selectedTag === tag && (
+                          <svg className="w-4 h-4 text-[#6c63ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Boutons pour réinitialiser les filtres */}
+            {(selectedCategoryId !== null || selectedTag !== null) && (
+              <button
+                onClick={() => {
+                  setSelectedCategoryId(null);
+                  setSelectedTag(null);
+                }}
+                className="px-3 py-2 rounded-[5px] text-sm text-[#666] hover:text-[#252525] hover:bg-gray-100 transition-colors flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Réinitialiser
+              </button>
+            )}
           </div>
         </div>
 
