@@ -22,10 +22,6 @@ jobs:
     - name: Installation des dépendances Backend
       working-directory: ./backend
       run: npm ci
-    
-    - name: Test Build Docker
+
+    - name: Test Build Docker Backend
       run: docker build ./backend
-      
-    # - name: Vérification du style (Lint)
-    #   working-directory: ./backend
-    #   run: npx eslint --init || echo "ESLint not configured yet, skipping"
