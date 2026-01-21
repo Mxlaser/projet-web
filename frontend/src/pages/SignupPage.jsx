@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#f7f7f7] flex flex-col items-center justify-start">
@@ -39,9 +41,9 @@ export default function SignupPage() {
         {/* Lien de connexion */}
         <p className="mt-6 text-center text-xs italic text-[#cccccc]">
           Déjà un compte ?{" "}
-          <a href="/login" className="text-[#6c63ff] underline">
+          <Link to="/login" className="text-[#6c63ff] underline">
             Connectez-vous
-          </a>
+          </Link>
         </p>
       </div>
     </div>

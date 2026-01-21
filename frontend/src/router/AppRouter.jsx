@@ -1,17 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import HomeRedirect from "./HomeRedirect";
+import ProtectedRoute from "./ProtectedRoute";
+
 import LoginPage from "../pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
 import ResourceFormPage from "../pages/ResourceFormPage";
-import ProtectedRoute from "./ProtectedRoute";
+import SignupPage from "../pages/SignupPage";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* ✅ Home intelligent */}
+        <Route path="/" element={<HomeRedirect />} />
 
+        {/* ✅ Routes publiques */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
+        {/* ✅ Routes protégées */}
         <Route
           path="/dashboard"
           element={
@@ -20,7 +27,6 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/resources/new"
           element={
@@ -30,7 +36,8 @@ export default function AppRouter() {
           }
         />
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* ✅ Le catch-all doit aller vers login (pas dashboard) */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
