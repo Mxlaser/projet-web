@@ -7,7 +7,7 @@ const upload = require('../middleware/upload');
 router.post('/', authMiddleware, upload.single('file'), resourceController.createResource);       // Créer
 router.get('/', authMiddleware, resourceController.getAllResources);       // Lire tout
 router.get('/:id', authMiddleware, resourceController.getResourceById);    // Lire un
-router.put('/:id', authMiddleware, resourceController.updateResource);     // Modifier
+router.put('/:id', authMiddleware, upload.single('file'), resourceController.updateResource);     // Modifier
 router.delete('/:id', authMiddleware, resourceController.deleteResource);  // Supprimer
 
 module.exports = router;

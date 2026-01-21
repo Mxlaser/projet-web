@@ -95,7 +95,7 @@ exports.updateResource = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.userId;
-    const { title, type, content, categoryId, tags } = req.body;
+    let { title, type, content, categoryId, tags } = req.body;
 
     const existingResource = await prisma.resource.findFirst({
       where: { id: parseInt(id), userId }
@@ -103,7 +103,52 @@ exports.updateResource = async (req, res) => {
 
     if (!existingResource) return res.status(404).json({ error: "Ressource introuvable" });
 
-    const tagConnect = tags ? tags.map(t => ({
+    // Parser le contenu si c'est une string
+    let contentData = content;
+    if (typeof contentData === 'string') {
+      try {
+        contentData = JSON.parse(contentData);
+      } catch(e) {
+        // Si le parsing échoue, garder la valeur originale ou utiliser un objet vide
+        contentData = {};
+      }
+    }
+    
+    // Si contentData n'est pas un objet, initialiser avec le contenu existant
+    if (!contentData || typeof contentData !== 'object') {
+      contentData = existingResource.content && typeof existingResource.content === 'object' 
+        ? { ...existingResource.content } 
+        : {};
+    }
+
+    // Si un nouveau fichier est uploadé, mettre à jour le contenu
+    if (req.file) {
+      contentData = {
+        ...contentData,
+        fileUrl: `/uploads/${req.file.filename}`,
+        originalName: req.file.originalname
+      };
+    } else if (existingResource.content && typeof existingResource.content === 'object') {
+      // Conserver les informations du fichier existant si aucun nouveau fichier n'est uploadé
+      if (existingResource.content.fileUrl) {
+        contentData.fileUrl = existingResource.content.fileUrl;
+      }
+      if (existingResource.content.originalName) {
+        contentData.originalName = existingResource.content.originalName;
+      }
+    }
+
+    // Parser les tags si c'est une string
+    let tagsArray = tags;
+    if (typeof tags === 'string') {
+      try {
+        tagsArray = JSON.parse(tags);
+      } catch(e) {
+        tagsArray = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+      }
+    }
+
+    const tagConnect = tagsArray ? tagsArray.map(t => ({
         where: { name: t },
         create: { name: t }
     })) : undefined;
@@ -113,15 +158,16 @@ exports.updateResource = async (req, res) => {
       data: {
         title,
         type,
-        content,
+        content: contentData,
         categoryId: categoryId ? parseInt(categoryId) : undefined,
-        tags: tags ? { connectOrCreate: tagConnect } : undefined
+        tags: tagConnect ? { connectOrCreate: tagConnect } : undefined
       },
       include: { tags: true, category: true }
     });
 
     res.json(updatedResource);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Erreur mise à jour" });
   }
 };

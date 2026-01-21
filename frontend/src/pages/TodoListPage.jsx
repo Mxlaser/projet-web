@@ -2,6 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
+import { api } from '../api/axios';
+
+// Fonction pour obtenir l'URL complète d'un fichier
+const getFileUrl = (fileUrl) => {
+  if (!fileUrl) return null;
+  const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  // S'assurer que fileUrl commence par / si ce n'est pas déjà une URL complète
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl;
+  }
+  // Ajouter le / au début si nécessaire
+  const normalizedUrl = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+  return `${baseURL}${normalizedUrl}`;
+};
+
+// Fonction pour vérifier si un fichier est une image
+const isImageFile = (fileName) => {
+  if (!fileName) return false;
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+  return imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+};
+
 
 export default function TodoListPage() {
   const navigate = useNavigate();
@@ -481,7 +503,7 @@ export default function TodoListPage() {
                               </button>
                             </div>
                           </div>
-                          {/* Description et Lien */}
+                          {/* Description, Lien et Fichier */}
                           {resource.type === 'link' ? (
                             <div className="flex flex-col gap-1">
                               {resource.content?.description && (
@@ -513,6 +535,85 @@ export default function TodoListPage() {
                                   >
                                     {formattedUrl}
                                   </a>
+                                );
+                              })()}
+                            </div>
+                          ) : resource.type === 'file' && resource.content?.fileUrl ? (
+                            <div className="flex flex-col gap-2">
+                              {resource.content?.description && (
+                                <p
+                                  className={`text-sm text-[#666] truncate ${
+                                    completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
+                                  }`}
+                                  title={resource.content.description}
+                                >
+                                  {resource.content.description}
+                                </p>
+                              )}
+                              {(() => {
+                                const fileUrl = getFileUrl(resource.content.fileUrl);
+                                const fileName = resource.content.originalName || resource.content.fileUrl?.split('/').pop() || 'Fichier';
+                                // Vérifier si c'est une image en utilisant le nom de fichier ou l'extension dans l'URL
+                                const fileUrlForCheck = resource.content.fileUrl || '';
+                                const isImage = isImageFile(fileName) || isImageFile(fileUrlForCheck);
+                                
+                                // Debug: afficher l'URL dans la console
+                                console.log('File URL Debug:', {
+                                  original: resource.content.fileUrl,
+                                  generated: fileUrl,
+                                  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+                                  fileName: fileName,
+                                  isImage: isImage
+                                });
+                                
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    {isImage && fileUrl ? (
+                                      <img
+                                        src={fileUrl}
+                                        alt={fileName}
+                                        className="w-16 h-16 object-cover rounded border border-[#e5e7eb]"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          window.open(fileUrl, '_blank');
+                                        }}
+                                        onError={(e) => {
+                                          console.error('Erreur de chargement de l\'image:', fileUrl);
+                                          // Si l'image ne charge pas, remplacer par un lien
+                                          const parent = e.target.parentElement;
+                                          e.target.style.display = 'none';
+                                          if (!parent.querySelector('.file-fallback-link')) {
+                                            const link = document.createElement('a');
+                                            link.href = fileUrl;
+                                            link.target = '_blank';
+                                            link.rel = 'noopener noreferrer';
+                                            link.className = 'file-fallback-link text-sm text-[#6c63ff] hover:underline flex items-center gap-1';
+                                            link.innerHTML = `
+                                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                              </svg>
+                                              ${fileName}
+                                            `;
+                                            parent.appendChild(link);
+                                          }
+                                        }}
+                                        style={{ cursor: 'pointer' }}
+                                      />
+                                    ) : (
+                                      <a
+                                        href={fileUrl || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-[#6c63ff] hover:underline flex items-center gap-1"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        {fileName}
+                                      </a>
+                                    )}
+                                  </div>
                                 );
                               })()}
                             </div>
@@ -734,20 +835,63 @@ export default function TodoListPage() {
               )}
 
               {/* File for file type */}
-              {selectedResource.type === 'file' && selectedResource.content?.fileUrl && (
-                <div>
-                  <span className="text-xs font-medium text-[#666] uppercase">Fichier</span>
-                  <a
-                    href={`http://localhost:3000${selectedResource.content.fileUrl}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#6c63ff] hover:underline block mt-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {selectedResource.content.originalName || 'Télécharger le fichier'}
-                  </a>
-                </div>
-              )}
+              {selectedResource.type === 'file' && selectedResource.content?.fileUrl && (() => {
+                const fileUrl = getFileUrl(selectedResource.content.fileUrl);
+                const fileName = selectedResource.content.originalName || selectedResource.content.fileUrl?.split('/').pop() || 'Fichier';
+                const isImage = isImageFile(fileName);
+                
+                return (
+                  <div>
+                    <span className="text-xs font-medium text-[#666] uppercase">Fichier</span>
+                    <div className="mt-2">
+                      {isImage ? (
+                        <div className="space-y-2">
+                          <img
+                            src={fileUrl || '#'}
+                            alt={fileName}
+                            className="max-w-full max-h-64 object-contain rounded border border-[#e5e7eb]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(fileUrl, '_blank');
+                            }}
+                            onError={(e) => {
+                              console.error('Erreur de chargement de l\'image dans la modal:', fileUrl);
+                              // Si l'image ne charge pas, masquer l'image
+                              e.target.style.display = 'none';
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <a
+                            href={fileUrl || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#6c63ff] hover:underline flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Télécharger {fileName}
+                          </a>
+                        </div>
+                      ) : (
+                        <a
+                          href={fileUrl || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-[#6c63ff] hover:underline flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          {fileName}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Status */}
               <div>

@@ -2,6 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
+import { api } from '../api/axios';
+
+// Fonction pour obtenir l'URL complète d'un fichier
+const getFileUrl = (fileUrl) => {
+  if (!fileUrl) return null;
+  const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  // S'assurer que fileUrl commence par / si ce n'est pas déjà une URL complète
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl;
+  }
+  // Ajouter le / au début si nécessaire
+  const normalizedUrl = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+  return `${baseURL}${normalizedUrl}`;
+};
+
+// Fonction pour vérifier si un fichier est une image
+const isImageFile = (fileName) => {
+  if (!fileName) return false;
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+  return imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+};
 
 export default function ResourceFormPage() {
   const { id } = useParams();
@@ -74,9 +95,12 @@ export default function ResourceFormPage() {
         contentData.url = url;
       }
 
+      // S'assurer que le type est "file" si un fichier est uploadé
+      const finalType = file ? 'file' : type;
+
       const resourceData = {
         title,
-        type,
+        type: finalType,
         content: contentData,
         categoryId: categoryId ? Number(categoryId) : null,
         tags: tagsArray,
@@ -86,10 +110,11 @@ export default function ResourceFormPage() {
       if (isEdit) {
         await resourceService.updateResource(id, {
           title,
-          type,
+          type: finalType,
           content: contentData,
           categoryId: categoryId ? Number(categoryId) : null,
           tags: tagsArray,
+          file, // Inclure le fichier si présent
         });
       } else {
         await resourceService.createResource(resourceData);
@@ -218,18 +243,51 @@ export default function ResourceFormPage() {
                 <label className="block text-sm font-medium text-[#252525] mb-2">
                   Fichier {!isEdit && '*'}
                 </label>
-                {isEdit && currentResource?.content?.fileUrl && (
-                  <div className="mb-2 text-sm text-[#666]">
-                    Fichier actuel : <a 
-                      href={`http://localhost:3000${currentResource.content.fileUrl}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-[#6c63ff] hover:underline"
-                    >
-                      {currentResource.content.originalName || 'Télécharger'}
-                    </a>
-                  </div>
-                )}
+                {isEdit && currentResource?.content?.fileUrl && (() => {
+                  const fileUrl = getFileUrl(currentResource.content.fileUrl);
+                  const fileName = currentResource.content.originalName || 'Fichier';
+                  const isImage = isImageFile(fileName);
+                  
+                  return (
+                    <div className="mb-4 p-3 bg-gray-50 rounded-md border border-[#e5e7eb]">
+                      <p className="text-xs font-medium text-[#666] mb-2">Fichier actuel :</p>
+                      {isImage ? (
+                        <div className="space-y-2">
+                          <img
+                            src={fileUrl || '#'}
+                            alt={fileName}
+                            className="max-w-full max-h-48 object-contain rounded border border-[#e5e7eb]"
+                            onClick={() => window.open(fileUrl, '_blank')}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <a
+                            href={fileUrl || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#6c63ff] hover:underline flex items-center gap-1"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Télécharger {fileName}
+                          </a>
+                        </div>
+                      ) : (
+                        <a
+                          href={fileUrl || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-[#6c63ff] hover:underline flex items-center gap-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          {fileName}
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
                 <input
                   type="file"
                   onChange={(e) => setFile(e.target.files[0])}
