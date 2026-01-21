@@ -10,6 +10,7 @@ export default function ResourceFormPage() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [url, setUrl] = useState('');
   const [type, setType] = useState('note');
   const [categoryId, setCategoryId] = useState('');
   const [tags, setTags] = useState('');
@@ -17,6 +18,7 @@ export default function ResourceFormPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentResource, setCurrentResource] = useState(null);
 
   useEffect(() => {
     loadCategories();
@@ -38,8 +40,10 @@ export default function ResourceFormPage() {
     try {
       setLoading(true);
       const resource = await resourceService.getResourceById(id);
+      setCurrentResource(resource);
       setTitle(resource.title);
       setDescription(resource.content?.description || '');
+      setUrl(resource.content?.url || '');
       setType(resource.type);
       setCategoryId(resource.categoryId || '');
       setTags(resource.tags?.map(t => t.name).join(', ') || '');
@@ -61,12 +65,19 @@ export default function ResourceFormPage() {
         .map(t => t.trim())
         .filter(t => t.length > 0);
 
+      const contentData = {
+        description,
+      };
+      
+      // Si c'est un lien, ajouter l'URL au contenu
+      if (type === 'link' && url) {
+        contentData.url = url;
+      }
+
       const resourceData = {
         title,
         type,
-        content: {
-          description,
-        },
+        content: contentData,
         categoryId: categoryId ? Number(categoryId) : null,
         tags: tagsArray,
         file,
@@ -76,9 +87,7 @@ export default function ResourceFormPage() {
         await resourceService.updateResource(id, {
           title,
           type,
-          content: {
-            description,
-          },
+          content: contentData,
           categoryId: categoryId ? Number(categoryId) : null,
           tags: tagsArray,
         });
@@ -145,14 +154,30 @@ export default function ResourceFormPage() {
               </select>
             </div>
 
+            {type === 'link' && (
+              <div>
+                <label className="block text-sm font-medium text-[#252525] mb-2">
+                  URL *
+                </label>
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  required={type === 'link'}
+                  className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-[#252525] mb-2">
-                Description
+                Description{type === 'link' ? ' (optionnel)' : ''}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
+                placeholder={type === 'link' ? 'Description du lien (optionnel)' : ''}
                 className="w-full rounded-md border border-[#c3c1e5] px-4 py-3 text-sm text-[#252525] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60 resize-none"
               />
             </div>
@@ -188,16 +213,34 @@ export default function ResourceFormPage() {
               />
             </div>
 
-            {!isEdit && (
+            {type === 'file' && (
               <div>
                 <label className="block text-sm font-medium text-[#252525] mb-2">
-                  Fichier (optionnel)
+                  Fichier {!isEdit && '*'}
                 </label>
+                {isEdit && currentResource?.content?.fileUrl && (
+                  <div className="mb-2 text-sm text-[#666]">
+                    Fichier actuel : <a 
+                      href={`http://localhost:3000${currentResource.content.fileUrl}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#6c63ff] hover:underline"
+                    >
+                      {currentResource.content.originalName || 'Télécharger'}
+                    </a>
+                  </div>
+                )}
                 <input
                   type="file"
                   onChange={(e) => setFile(e.target.files[0])}
+                  required={type === 'file' && !isEdit}
                   className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
                 />
+                {isEdit && (
+                  <p className="mt-1 text-xs text-[#666]">
+                    Laissez vide pour conserver le fichier actuel
+                  </p>
+                )}
               </div>
             )}
           </div>

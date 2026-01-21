@@ -11,6 +11,8 @@ export default function TodoListPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState(null);
   const [deletingIds, setDeletingIds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -95,6 +97,22 @@ export default function TodoListPage() {
     navigate(`/resources/${id}/edit`);
   };
 
+  const handleViewResource = (resource) => {
+    setSelectedResource(resource);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedResource(null);
+  };
+
+  const handleDeleteFromModal = async () => {
+    if (!selectedResource) return;
+    await handleDelete(selectedResource.id);
+    handleCloseViewModal();
+  };
+
 
   const handleDelete = async (id) => {
     if (deletingIds.includes(id)) return;
@@ -131,7 +149,23 @@ export default function TodoListPage() {
   };
 
   const filteredResources = resources.filter(resource => {
-    const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!searchQuery.trim()) {
+      const completed = getCompleted(resource);
+      if (filter === 'completed') return completed;
+      if (filter === 'active') return !completed;
+      return true;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const titleMatch = resource.title.toLowerCase().includes(query);
+    const descriptionMatch = resource.content?.description?.toLowerCase().includes(query) || false;
+    const urlMatch = resource.content?.url?.toLowerCase().includes(query) || false;
+    const fileNameMatch = resource.content?.originalName?.toLowerCase().includes(query) || false;
+    const categoryMatch = resource.category?.name?.toLowerCase().includes(query) || false;
+    const tagsMatch = resource.tags?.some(tag => tag.name.toLowerCase().includes(query)) || false;
+
+    const matchesSearch = titleMatch || descriptionMatch || urlMatch || fileNameMatch || categoryMatch || tagsMatch;
+    
     const completed = getCompleted(resource);
     if (filter === 'completed') return matchesSearch && completed;
     if (filter === 'active') return matchesSearch && !completed;
@@ -374,7 +408,10 @@ export default function TodoListPage() {
                         <div className="absolute top-0 left-0 right-0 h-px bg-[#e0e0e0]"></div>
                       )}
 
-                      <div className="flex items-center gap-4 py-4 px-2 hover:bg-white/50 transition-colors">
+                      <div 
+                        className="flex items-center gap-4 py-4 px-2 hover:bg-white/50 transition-colors cursor-pointer"
+                        onClick={() => handleViewResource(resource)}
+                      >
                         {/* Checkbox */}
                         <button
                           onClick={() => toggleTodo(resource.id)}
@@ -444,16 +481,52 @@ export default function TodoListPage() {
                               </button>
                             </div>
                           </div>
-                          {/* Description */}
-                          {resource.content?.description && (
-                            <p
-                              className={`text-sm text-[#666] truncate ${
-                                completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
-                              }`}
-                              title={resource.content.description}
-                            >
-                              {resource.content.description}
-                            </p>
+                          {/* Description et Lien */}
+                          {resource.type === 'link' ? (
+                            <div className="flex flex-col gap-1">
+                              {resource.content?.description && (
+                                <p
+                                  className={`text-sm text-[#666] truncate ${
+                                    completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
+                                  }`}
+                                  title={resource.content.description}
+                                >
+                                  {resource.content.description}
+                                </p>
+                              )}
+                              {resource.content?.url && (() => {
+                                const url = resource.content.url;
+                                // S'assurer que l'URL est valide et externe
+                                const formattedUrl = url && !url.startsWith('http://') && !url.startsWith('https://') 
+                                  ? `https://${url}` 
+                                  : url;
+                                return (
+                                  <a
+                                    href={formattedUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`text-sm text-[#6c63ff] truncate hover:underline ${
+                                      completed ? 'line-through text-[rgba(108,99,255,0.5)]' : ''
+                                    }`}
+                                    title={formattedUrl}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {formattedUrl}
+                                  </a>
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            resource.content?.description && (
+                              <p
+                                className={`text-sm text-[#666] truncate ${
+                                  completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
+                                }`}
+                                title={resource.content.description}
+                              >
+                                {resource.content.description}
+                              </p>
+                            )
                           )}
                         </div>
 
@@ -559,6 +632,163 @@ export default function TodoListPage() {
           </div>
         )}
       </div>
+
+      {/* Modal for Viewing Resource */}
+      {isViewModalOpen && selectedResource && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={handleCloseViewModal}
+        >
+          <div 
+            className="bg-white rounded-[16px] p-6 w-full max-w-2xl mx-4 shadow-xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-[#252525]">
+                {selectedResource.title}
+              </h2>
+              <button
+                onClick={handleCloseViewModal}
+                className="w-6 h-6 flex items-center justify-center text-[#252525] hover:text-[#6c63ff] transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-4 mb-6">
+              {/* Type */}
+              <div>
+                <span className="text-xs font-medium text-[#666] uppercase">Type</span>
+                <p className="text-sm text-[#252525] capitalize">{selectedResource.type}</p>
+              </div>
+
+              {/* Category */}
+              {selectedResource.category && (
+                <div>
+                  <span className="text-xs font-medium text-[#666] uppercase">Catégorie</span>
+                  <p className="text-sm text-[#252525]">
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[#6c63ff] text-white mt-1">
+                      {selectedResource.category.name}
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* Tags */}
+              {selectedResource.tags && selectedResource.tags.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-[#666] uppercase">Tags</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {selectedResource.tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="inline-block px-2 py-1 rounded text-xs bg-gray-100 text-[#252525]"
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {selectedResource.content?.description && (
+                <div>
+                  <span className="text-xs font-medium text-[#666] uppercase">Description</span>
+                  <p className="text-sm text-[#252525] mt-1 whitespace-pre-wrap">
+                    {selectedResource.content.description}
+                  </p>
+                </div>
+              )}
+
+              {/* URL for links */}
+              {selectedResource.type === 'link' && selectedResource.content?.url && (
+                <div>
+                  <span className="text-xs font-medium text-[#666] uppercase">Lien</span>
+                  <a
+                    href={selectedResource.content.url.startsWith('http') 
+                      ? selectedResource.content.url 
+                      : `https://${selectedResource.content.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#6c63ff] hover:underline block mt-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {selectedResource.content.url}
+                  </a>
+                </div>
+              )}
+
+              {/* File for file type */}
+              {selectedResource.type === 'file' && selectedResource.content?.fileUrl && (
+                <div>
+                  <span className="text-xs font-medium text-[#666] uppercase">Fichier</span>
+                  <a
+                    href={`http://localhost:3000${selectedResource.content.fileUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#6c63ff] hover:underline block mt-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {selectedResource.content.originalName || 'Télécharger le fichier'}
+                  </a>
+                </div>
+              )}
+
+              {/* Status */}
+              <div>
+                <span className="text-xs font-medium text-[#666] uppercase">Statut</span>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className={`text-sm ${getCompleted(selectedResource) ? 'text-[rgba(37,37,37,0.5)] line-through' : 'text-[#252525]'}`}>
+                    {getCompleted(selectedResource) ? 'Terminé' : 'En cours'}
+                  </span>
+                  {selectedResource.content?.favorite && (
+                    <span className="text-sm text-red-500 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                      Favori
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 justify-end pt-4 border-t border-[#e5e7eb]">
+              <button
+                onClick={handleDeleteFromModal}
+                className="px-6 py-2 rounded-[5px] border border-red-200 bg-white text-red-600 text-sm font-medium uppercase hover:bg-red-50 transition-colors"
+              >
+                Supprimer
+              </button>
+              <button
+                onClick={() => {
+                  handleCloseViewModal();
+                  handleEdit(selectedResource.id);
+                }}
+                className="px-6 py-2 rounded-[5px] bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium uppercase hover:bg-[#5a52e0] transition-colors"
+              >
+                Modifier
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal for Creating New Category */}
       {isCategoryModalOpen && (
