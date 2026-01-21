@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
 import { api } from '../api/axios';
+import { useTheme } from '../context/ThemeContext';
 
 // Fonction pour obtenir l'URL complète d'un fichier
 const getFileUrl = (fileUrl) => {
@@ -27,6 +28,7 @@ const isImageFile = (fileName) => {
 
 export default function TodoListPage() {
   const navigate = useNavigate();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const [resources, setResources] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -220,7 +222,7 @@ export default function TodoListPage() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f7f7f7] flex flex-col items-center py-10 px-4"
+      className="min-h-screen bg-[#f7f7f7] dark:bg-[#1a1a1a] flex flex-col items-center py-10 px-4"
       onClick={() => {
         if (isDropdownOpen) setIsDropdownOpen(false);
         if (isCategoryFilterOpen) setIsCategoryFilterOpen(false);
@@ -231,7 +233,7 @@ export default function TodoListPage() {
       <div className="w-full max-w-3xl">
         {/* Header */}
         <div className="flex flex-col items-center gap-4 mb-8">
-          <h1 className="text-[26px] font-medium text-[#252525] uppercase">
+          <h1 className="text-[26px] font-medium text-[#252525] dark:text-[#f7f7f7] uppercase">
             Vos ressources
           </h1>
 
@@ -244,10 +246,10 @@ export default function TodoListPage() {
                 placeholder="Search note..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-[38px] rounded-[5px] border border-[#6c63ff] px-4 pr-10 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+                className="w-full h-[38px] rounded-[5px] border border-[#6c63ff] dark:border-[#5a52e0] px-4 pr-10 text-sm text-[#252525] dark:text-[#f7f7f7] dark:bg-[#2a2a2a] placeholder:text-[#c3c1e5] dark:placeholder:text-[#666] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
               />
               <svg
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#252525] pointer-events-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#252525] dark:text-[#f7f7f7] pointer-events-none"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -305,7 +307,7 @@ export default function TodoListPage() {
 
               {/* Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute top-full mt-1 right-0 bg-white border border-[#e5e7eb] rounded-[5px] shadow-md min-w-[120px] z-10 overflow-hidden">
+                <div className="absolute top-full mt-1 right-0 bg-white dark:bg-[#2a2a2a] border border-[#e5e7eb] dark:border-[#404040] rounded-[5px] shadow-md min-w-[120px] z-10 overflow-hidden">
                   <button
                     onClick={() => {
                       setFilter('all');
@@ -314,7 +316,7 @@ export default function TodoListPage() {
                     className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                       filter === 'all'
                         ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                        : 'text-[#374151] hover:bg-gray-50'
+                        : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -344,7 +346,7 @@ export default function TodoListPage() {
                     className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                       filter === 'active'
                         ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                        : 'text-[#374151] hover:bg-gray-50'
+                        : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -374,7 +376,7 @@ export default function TodoListPage() {
                     className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                       filter === 'completed'
                         ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                        : 'text-[#374151] hover:bg-gray-50'
+                        : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -401,20 +403,40 @@ export default function TodoListPage() {
             </div>
 
             {/* Dark Mode Toggle */}
-            <button className="w-[38px] h-[38px] bg-[#6c63ff] rounded-[5px] flex items-center justify-center hover:bg-[#5a52e0] transition-colors">
-              <svg
-                className="w-5 h-5 text-[#f7f7f7]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                />
-              </svg>
+            <button 
+              onClick={toggleDarkMode}
+              className="w-[38px] h-[38px] bg-[#6c63ff] dark:bg-[#5a52e0] rounded-[5px] flex items-center justify-center hover:bg-[#5a52e0] dark:hover:bg-[#6c63ff] transition-colors"
+              title={isDarkMode ? "Passer en mode clair" : "Passer en mode sombre"}
+            >
+              {isDarkMode ? (
+                <svg
+                  className="w-5 h-5 text-[#f7f7f7]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-5 h-5 text-[#f7f7f7]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+              )}
             </button>
           </div>
 
@@ -430,7 +452,7 @@ export default function TodoListPage() {
                 className={`px-4 py-2 rounded-[5px] text-sm font-medium transition-colors flex items-center gap-2 ${
                   selectedCategoryId !== null
                     ? 'bg-[#6c63ff] text-[#f7f7f7]'
-                    : 'bg-white border border-[#e5e7eb] text-[#374151] hover:bg-gray-50'
+                    : 'bg-white dark:bg-[#2a2a2a] border border-[#e5e7eb] dark:border-[#404040] text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,7 +472,7 @@ export default function TodoListPage() {
               </button>
 
               {isCategoryFilterOpen && (
-                <div className="absolute top-full mt-1 left-0 bg-white border border-[#e5e7eb] rounded-[5px] shadow-md min-w-[200px] max-h-[300px] overflow-y-auto z-20">
+                <div className="absolute top-full mt-1 left-0 bg-white dark:bg-[#2a2a2a] border border-[#e5e7eb] dark:border-[#404040] rounded-[5px] shadow-md min-w-[200px] max-h-[300px] overflow-y-auto z-20">
                   <button
                     onClick={() => {
                       setSelectedCategoryId(null);
@@ -459,7 +481,7 @@ export default function TodoListPage() {
                     className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                       selectedCategoryId === null
                         ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                        : 'text-[#374151] hover:bg-gray-50'
+                        : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -481,7 +503,7 @@ export default function TodoListPage() {
                       className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                         selectedCategoryId === category.id
                           ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                          : 'text-[#374151] hover:bg-gray-50'
+                          : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -508,7 +530,7 @@ export default function TodoListPage() {
                 className={`px-4 py-2 rounded-[5px] text-sm font-medium transition-colors flex items-center gap-2 ${
                   selectedTag !== null
                     ? 'bg-[#6c63ff] text-[#f7f7f7]'
-                    : 'bg-white border border-[#e5e7eb] text-[#374151] hover:bg-gray-50'
+                    : 'bg-white dark:bg-[#2a2a2a] border border-[#e5e7eb] dark:border-[#404040] text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -526,7 +548,7 @@ export default function TodoListPage() {
               </button>
 
               {isTagFilterOpen && (
-                <div className="absolute top-full mt-1 left-0 bg-white border border-[#e5e7eb] rounded-[5px] shadow-md min-w-[200px] max-h-[300px] overflow-y-auto z-20">
+                <div className="absolute top-full mt-1 left-0 bg-white dark:bg-[#2a2a2a] border border-[#e5e7eb] dark:border-[#404040] rounded-[5px] shadow-md min-w-[200px] max-h-[300px] overflow-y-auto z-20">
                   <button
                     onClick={() => {
                       setSelectedTag(null);
@@ -535,7 +557,7 @@ export default function TodoListPage() {
                     className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                       selectedTag === null
                         ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                        : 'text-[#374151] hover:bg-gray-50'
+                        : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -557,7 +579,7 @@ export default function TodoListPage() {
                       className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                         selectedTag === tag
                           ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                          : 'text-[#374151] hover:bg-gray-50'
+                          : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -581,7 +603,7 @@ export default function TodoListPage() {
                   setSelectedCategoryId(null);
                   setSelectedTag(null);
                 }}
-                className="px-3 py-2 rounded-[5px] text-sm text-[#666] hover:text-[#252525] hover:bg-gray-100 transition-colors flex items-center gap-1"
+                className="px-3 py-2 rounded-[5px] text-sm text-[#666] dark:text-[#999] hover:text-[#252525] dark:hover:text-[#f7f7f7] hover:bg-gray-100 dark:hover:bg-[#333333] transition-colors flex items-center gap-1"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -595,7 +617,7 @@ export default function TodoListPage() {
         {/* Vos ressources */}
         <div className="relative w-full">
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md text-sm">
               {error}
               <button
                 onClick={() => setError('')}
@@ -606,11 +628,11 @@ export default function TodoListPage() {
             </div>
           )}
           {loading ? (
-            <div className="text-center py-8 text-[#666]">Chargement...</div>
+            <div className="text-center py-8 text-[#666] dark:text-[#999]">Chargement...</div>
           ) : (
             <div className="space-y-0">
               {filteredResources.length === 0 ? (
-                <div className="text-center py-8 text-[#666]">Aucune ressource trouvée</div>
+                <div className="text-center py-8 text-[#666] dark:text-[#999]">Aucune ressource trouvée</div>
               ) : (
                 filteredResources.map((resource, index) => {
                   const completed = getCompleted(resource);
@@ -626,11 +648,11 @@ export default function TodoListPage() {
                     >
                       {/* Separator Line */}
                       {index > 0 && (
-                        <div className="absolute top-0 left-0 right-0 h-px bg-[#e0e0e0]"></div>
+                        <div className="absolute top-0 left-0 right-0 h-px bg-[#e0e0e0] dark:bg-[#404040]"></div>
                       )}
 
                       <div 
-                        className="flex items-center gap-4 py-4 px-2 hover:bg-white/50 transition-colors cursor-pointer"
+                        className="flex items-center gap-4 py-4 px-2 hover:bg-white/50 dark:hover:bg-[#2a2a2a]/50 transition-colors cursor-pointer"
                         onClick={() => handleViewResource(resource)}
                       >
                         {/* Checkbox */}
@@ -661,7 +683,7 @@ export default function TodoListPage() {
                         <div className="flex-1 flex flex-col gap-1">
                           <div className="flex items-center justify-between gap-2">
                             <p
-                              className={`text-xl uppercase font-medium ${
+                              className={`text-xl uppercase font-medium dark:text-[#f7f7f7] ${
                                 completed
                                   ? 'line-through text-[rgba(37,37,37,0.5)]'
                                   : 'text-[#252525]'
@@ -838,7 +860,7 @@ export default function TodoListPage() {
                               e.stopPropagation();
                               handleEdit(resource.id);
                             }}
-                            className="w-[18px] h-[18px] text-[#252525] hover:text-[#6c63ff] transition-colors"
+                            className="w-[18px] h-[18px] text-[#252525] dark:text-[#e5e5e5] hover:text-[#6c63ff] transition-colors"
                           >
                             <svg
                               fill="none"
@@ -916,7 +938,7 @@ export default function TodoListPage() {
                 setIsFabMenuOpen(false);
                 navigate('/resources/new');
               }}
-              className="px-4 py-2 rounded-[8px] bg-white shadow-lg border border-[#e5e7eb] text-sm text-[#252525] hover:bg-[#f3f4ff] transition transform origin-bottom-right translate-y-1 opacity-100"
+              className="px-4 py-2 rounded-[8px] bg-white dark:bg-[#2a2a2a] shadow-lg border border-[#e5e7eb] dark:border-[#404040] text-sm text-[#252525] dark:text-[#e5e5e5] hover:bg-[#f3f4ff] dark:hover:bg-[#333333] transition transform origin-bottom-right translate-y-1 opacity-100"
             >
               Ajouter une ressource
             </button>
@@ -925,7 +947,7 @@ export default function TodoListPage() {
                 setIsFabMenuOpen(false);
                 setIsCategoryModalOpen(true);
               }}
-              className="px-4 py-2 rounded-[8px] bg-white shadow-lg border border-[#e5e7eb] text-sm text-[#252525] hover:bg-[#f3f4ff] transition transform origin-bottom-right translate-y-1 opacity-100"
+              className="px-4 py-2 rounded-[8px] bg-white dark:bg-[#2a2a2a] shadow-lg border border-[#e5e7eb] dark:border-[#404040] text-sm text-[#252525] dark:text-[#e5e5e5] hover:bg-[#f3f4ff] dark:hover:bg-[#333333] transition transform origin-bottom-right translate-y-1 opacity-100"
             >
               Créer une catégorie
             </button>
@@ -940,17 +962,17 @@ export default function TodoListPage() {
           onClick={handleCloseViewModal}
         >
           <div 
-            className="bg-white rounded-[16px] p-6 w-full max-w-2xl mx-4 shadow-xl max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-[#2a2a2a] rounded-[16px] p-6 w-full max-w-2xl mx-4 shadow-xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-[#252525]">
+              <h2 className="text-2xl font-semibold text-[#252525] dark:text-[#f7f7f7]">
                 {selectedResource.title}
               </h2>
               <button
                 onClick={handleCloseViewModal}
-                className="w-6 h-6 flex items-center justify-center text-[#252525] hover:text-[#6c63ff] transition-colors"
+                className="w-6 h-6 flex items-center justify-center text-[#252525] dark:text-[#e5e5e5] hover:text-[#6c63ff] transition-colors"
               >
                 <svg
                   className="w-5 h-5"
@@ -973,14 +995,14 @@ export default function TodoListPage() {
               {/* Type */}
               <div>
                 <span className="text-xs font-medium text-[#666] uppercase">Type</span>
-                <p className="text-sm text-[#252525] capitalize">{selectedResource.type}</p>
+                <p className="text-sm text-[#252525] dark:text-[#e5e5e5] capitalize">{selectedResource.type}</p>
               </div>
 
               {/* Category */}
               {selectedResource.category && (
                 <div>
-                  <span className="text-xs font-medium text-[#666] uppercase">Catégorie</span>
-                  <p className="text-sm text-[#252525]">
+                  <span className="text-xs font-medium text-[#666] dark:text-[#999] uppercase">Catégorie</span>
+                  <p className="text-sm text-[#252525] dark:text-[#e5e5e5]">
                     <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[#6c63ff] text-white mt-1">
                       {selectedResource.category.name}
                     </span>
@@ -991,12 +1013,12 @@ export default function TodoListPage() {
               {/* Tags */}
               {selectedResource.tags && selectedResource.tags.length > 0 && (
                 <div>
-                  <span className="text-xs font-medium text-[#666] uppercase">Tags</span>
+                  <span className="text-xs font-medium text-[#666] dark:text-[#999] uppercase">Tags</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {selectedResource.tags.map((tag) => (
                       <span
                         key={tag.id}
-                        className="inline-block px-2 py-1 rounded text-xs bg-gray-100 text-[#252525]"
+                        className="inline-block px-2 py-1 rounded text-xs bg-gray-100 dark:bg-[#333333] text-[#252525] dark:text-[#e5e5e5]"
                       >
                         {tag.name}
                       </span>
@@ -1008,8 +1030,8 @@ export default function TodoListPage() {
               {/* Description */}
               {selectedResource.content?.description && (
                 <div>
-                  <span className="text-xs font-medium text-[#666] uppercase">Description</span>
-                  <p className="text-sm text-[#252525] mt-1 whitespace-pre-wrap">
+                  <span className="text-xs font-medium text-[#666] dark:text-[#999] uppercase">Description</span>
+                  <p className="text-sm text-[#252525] dark:text-[#e5e5e5] mt-1 whitespace-pre-wrap">
                     {selectedResource.content.description}
                   </p>
                 </div>
@@ -1018,7 +1040,7 @@ export default function TodoListPage() {
               {/* URL for links */}
               {selectedResource.type === 'link' && selectedResource.content?.url && (
                 <div>
-                  <span className="text-xs font-medium text-[#666] uppercase">Lien</span>
+                  <span className="text-xs font-medium text-[#666] dark:text-[#999] uppercase">Lien</span>
                   <a
                     href={selectedResource.content.url.startsWith('http') 
                       ? selectedResource.content.url 
@@ -1041,7 +1063,7 @@ export default function TodoListPage() {
                 
                 return (
                   <div>
-                    <span className="text-xs font-medium text-[#666] uppercase">Fichier</span>
+                    <span className="text-xs font-medium text-[#666] dark:text-[#999] uppercase">Fichier</span>
                     <div className="mt-2">
                       {isImage ? (
                         <div className="space-y-2">
@@ -1096,7 +1118,7 @@ export default function TodoListPage() {
               <div>
                 <span className="text-xs font-medium text-[#666] uppercase">Statut</span>
                 <div className="flex items-center gap-4 mt-1">
-                  <span className={`text-sm ${getCompleted(selectedResource) ? 'text-[rgba(37,37,37,0.5)] line-through' : 'text-[#252525]'}`}>
+                  <span className={`text-sm ${getCompleted(selectedResource) ? 'text-[rgba(37,37,37,0.5)] dark:text-[rgba(247,247,247,0.5)] line-through' : 'text-[#252525] dark:text-[#e5e5e5]'}`}>
                     {getCompleted(selectedResource) ? 'Terminé' : 'En cours'}
                   </span>
                   {selectedResource.content?.favorite && (
@@ -1112,10 +1134,10 @@ export default function TodoListPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 justify-end pt-4 border-t border-[#e5e7eb]">
+            <div className="flex gap-4 justify-end pt-4 border-t border-[#e5e7eb] dark:border-[#404040]">
               <button
                 onClick={handleDeleteFromModal}
-                className="px-6 py-2 rounded-[5px] border border-red-200 bg-white text-red-600 text-sm font-medium uppercase hover:bg-red-50 transition-colors"
+                className="px-6 py-2 rounded-[5px] border border-red-200 dark:border-red-800 bg-white dark:bg-[#2a2a2a] text-red-600 dark:text-red-400 text-sm font-medium uppercase hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 Supprimer
               </button>
@@ -1140,17 +1162,17 @@ export default function TodoListPage() {
           onClick={handleCancelCategory}
         >
           <div 
-            className="bg-white rounded-[16px] p-6 w-full max-w-md mx-4 shadow-xl"
+            className="bg-white dark:bg-[#2a2a2a] rounded-[16px] p-6 w-full max-w-md mx-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-[#252525]">
+              <h2 className="text-xl font-semibold text-[#252525] dark:text-[#f7f7f7]">
                 Créer une nouvelle catégorie
               </h2>
               <button
                 onClick={handleCancelCategory}
-                className="w-6 h-6 flex items-center justify-center text-[#252525] hover:text-[#6c63ff] transition-colors"
+                className="w-6 h-6 flex items-center justify-center text-[#252525] dark:text-[#e5e5e5] hover:text-[#6c63ff] transition-colors"
               >
                 <svg
                   className="w-5 h-5"
@@ -1180,7 +1202,7 @@ export default function TodoListPage() {
                     handleCreateCategory();
                   }
                 }}
-                className="w-full h-12 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+                className="w-full h-12 rounded-[5px] border border-[#c3c1e5] dark:border-[#5a52e0] px-4 text-sm text-[#252525] dark:text-[#f7f7f7] dark:bg-[#333333] placeholder:text-[#c3c1e5] dark:placeholder:text-[#666] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
                 autoFocus
               />
             </div>
@@ -1189,7 +1211,7 @@ export default function TodoListPage() {
             <div className="flex gap-4 justify-end">
               <button
                 onClick={handleCancelCategory}
-                className="px-6 py-2 rounded-[5px] border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium uppercase hover:bg-gray-50 transition-colors"
+                className="px-6 py-2 rounded-[5px] border border-[#e5e7eb] dark:border-[#404040] bg-white dark:bg-[#2a2a2a] text-[#374151] dark:text-[#e5e5e5] text-sm font-medium uppercase hover:bg-gray-50 dark:hover:bg-[#333333] transition-colors"
               >
                 Annuler
               </button>
