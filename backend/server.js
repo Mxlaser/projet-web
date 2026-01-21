@@ -7,6 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const resourceRoutes = require('./routes/resourceRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_temporaire';
@@ -43,6 +44,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.use('/api/resources', resourceRoutes);
 
+app.use('/api/categories', categoryRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Serveur lancé sur http://localhost:${PORT}`);
