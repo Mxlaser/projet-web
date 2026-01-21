@@ -19,8 +19,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgres://user:password@db:5432/resource_db
-      PORT: 3000
+      - DATABASE_URL=postgres://user:password@db:5432/resource_db
+      - PORT=3000
     depends_on:
       - db
     volumes:
