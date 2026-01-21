@@ -1,154 +1,140 @@
-import { useState } from 'react';
-import { SketchPicker } from 'react-color';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { resourceService } from '../api/resourceService';
+import { categoryService } from '../api/categoryService';
 
 export default function TodoListPage() {
-  const [todos, setTodos] = useState([
-    { id: 1, text: 'Note #1', completed: false, favorite: false },
-    { id: 2, text: 'Note #2', completed: true, favorite: false },
-    { id: 3, text: 'Note #3', completed: false, favorite: false },
-  ]);
+  const navigate = useNavigate();
+  const [resources, setResources] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [deletingIds, setDeletingIds] = useState([]);
-  const [editingTodoId, setEditingTodoId] = useState(null);
-  const [newNoteTitle, setNewNoteTitle] = useState('');
-  const [newNoteDescription, setNewNoteDescription] = useState('');
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Travail' },
-    { id: 2, name: 'Personnel' },
-    { id: 3, name: 'Études' },
-  ]);
+  const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [categoryBackgroundColor, setCategoryBackgroundColor] = useState('#000000');
-  const [categoryTextColor, setCategoryTextColor] = useState('#FFFFFF');
-  const [showBackgroundColorPicker, setShowBackgroundColorPicker] = useState(false);
-  const [showTextColorPicker, setShowTextColorPicker] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const toggleTodo = (id) => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+  // Charger les ressources et catégories au montage
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [resourcesData, categoriesData] = await Promise.all([
+        resourceService.getAllResources(),
+        categoryService.getAllCategories(),
+      ]);
+      setResources(resourcesData);
+      setCategories(categoriesData);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors du chargement des données');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleFavorite = (id) => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, favorite: !todo.favorite } : todo
-    ));
+  // Pour les ressources, on utilise le champ content.completed si disponible, sinon false
+  const getCompleted = (resource) => {
+    return resource.content?.completed || false;
+  };
+
+  const toggleTodo = async (id) => {
+    const resource = resources.find(r => r.id === id);
+    if (!resource) return;
+
+    const newCompleted = !getCompleted(resource);
+    const updatedContent = {
+      ...resource.content,
+      completed: newCompleted,
+    };
+
+    try {
+      await resourceService.updateResource(id, {
+        title: resource.title,
+        type: resource.type,
+        content: updatedContent,
+        categoryId: resource.categoryId,
+        tags: resource.tags?.map(t => t.name) || [],
+      });
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la mise à jour');
+    }
+  };
+
+  const toggleFavorite = async (id) => {
+    const resource = resources.find(r => r.id === id);
+    if (!resource) return;
+
+    const newFavorite = !(resource.content?.favorite || false);
+    const updatedContent = {
+      ...resource.content,
+      favorite: newFavorite,
+    };
+
+    try {
+      await resourceService.updateResource(id, {
+        title: resource.title,
+        type: resource.type,
+        content: updatedContent,
+        categoryId: resource.categoryId,
+        tags: resource.tags?.map(t => t.name) || [],
+      });
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la mise à jour');
+    }
   };
 
   const handleEdit = (id) => {
-    const todo = todos.find(t => t.id === id);
-    if (todo) {
-      setEditingTodoId(id);
-      setNewNoteTitle(todo.text || '');
-      setNewNoteDescription(todo.description || '');
-      setIsFavorite(todo.favorite || false);
-      setSelectedCategory(todo.categoryId || '');
-      setIsEditModalOpen(true);
-    }
+    navigate(`/resources/${id}/edit`);
   };
 
-  const handleUpdateNote = () => {
-    if (newNoteTitle.trim() && editingTodoId) {
-      setTodos(todos.map(todo => 
-        todo.id === editingTodoId 
-          ? { 
-              ...todo, 
-              text: newNoteTitle.trim(),
-              description: newNoteDescription.trim(),
-              favorite: isFavorite,
-              categoryId: selectedCategory ? Number(selectedCategory) : null,
-            }
-          : todo
-      ));
-      handleCancelEdit();
-    }
-  };
 
-  const handleCancelEdit = () => {
-    setEditingTodoId(null);
-    setNewNoteTitle('');
-    setNewNoteDescription('');
-    setIsFavorite(false);
-    setSelectedCategory('');
-    setIsEditModalOpen(false);
-  };
-
-  const handleCreateNote = () => {
-    if (newNoteTitle.trim()) {
-      const newTodo = {
-        id: todos.length > 0 ? Math.max(...todos.map(t => t.id)) + 1 : 1,
-        text: newNoteTitle.trim(),
-        description: newNoteDescription.trim(),
-        completed: false,
-        favorite: isFavorite,
-        categoryId: selectedCategory ? Number(selectedCategory) : null,
-      };
-      setTodos([...todos, newTodo]);
-      setNewNoteTitle('');
-      setNewNoteDescription('');
-      setIsFavorite(false);
-      setSelectedCategory('');
-      setIsModalOpen(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setNewNoteTitle('');
-    setNewNoteDescription('');
-    setIsFavorite(false);
-    setSelectedCategory('');
-    setIsModalOpen(false);
-  };
-
-  const handleDelete = (id) => {
-    // lance l'animation puis supprime réellement l'élément du DOM
+  const handleDelete = async (id) => {
     if (deletingIds.includes(id)) return;
     setDeletingIds((prev) => [...prev, id]);
-    setTimeout(() => {
-      setTodos((prev) => prev.filter((todo) => todo.id !== id));
-      setDeletingIds((prev) => prev.filter((todoId) => todoId !== id));
-    }, 200); // durée de la transition CSS
+    
+    try {
+      await resourceService.deleteResource(id);
+      setTimeout(() => {
+        setResources((prev) => prev.filter((resource) => resource.id !== id));
+        setDeletingIds((prev) => prev.filter((resourceId) => resourceId !== id));
+      }, 200);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la suppression');
+      setDeletingIds((prev) => prev.filter((resourceId) => resourceId !== id));
+    }
   };
 
-  const handleCreateCategory = () => {
-    if (newCategoryName.trim()) {
-      const newCategory = {
-        id: categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1,
-        name: newCategoryName.trim(),
-        backgroundColor: categoryBackgroundColor,
-        textColor: categoryTextColor,
-      };
-      setCategories([...categories, newCategory]);
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    try {
+      await categoryService.createCategory(newCategoryName.trim());
+      await loadData();
       setNewCategoryName('');
-      setCategoryBackgroundColor('#000000');
-      setCategoryTextColor('#FFFFFF');
-      setShowBackgroundColorPicker(false);
-      setShowTextColorPicker(false);
       setIsCategoryModalOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la création de la catégorie');
     }
   };
 
   const handleCancelCategory = () => {
     setNewCategoryName('');
-    setCategoryBackgroundColor('#000000');
-    setCategoryTextColor('#FFFFFF');
-    setShowBackgroundColorPicker(false);
-    setShowTextColorPicker(false);
     setIsCategoryModalOpen(false);
   };
 
-  const filteredTodos = todos.filter(todo => {
-    const matchesSearch = todo.text.toLowerCase().includes(searchQuery.toLowerCase());
-    if (filter === 'completed') return matchesSearch && todo.completed;
-    if (filter === 'active') return matchesSearch && !todo.completed;
+  const filteredResources = resources.filter(resource => {
+    const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const completed = getCompleted(resource);
+    if (filter === 'completed') return matchesSearch && completed;
+    if (filter === 'active') return matchesSearch && !completed;
     return matchesSearch;
   });
 
@@ -195,7 +181,7 @@ export default function TodoListPage() {
 
             {/* Add Button */}
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => navigate('/resources/new')}
               className="w-[38px] h-[38px] bg-[#6c63ff] rounded-[5px] flex items-center justify-center hover:bg-[#5a52e0] transition-colors"
             >
               <svg
@@ -353,160 +339,174 @@ export default function TodoListPage() {
 
         {/* Vos ressources */}
         <div className="relative w-full">
-          <div className="space-y-0">
-            {filteredTodos.map((todo, index) => (
-              <div
-                key={todo.id}
-                className={`group relative transition-all duration-200 ease-out ${
-                  deletingIds.includes(todo.id)
-                    ? 'opacity-0 -translate-x-4 scale-[0.98]'
-                    : 'opacity-100 translate-x-0 scale-100'
-                }`}
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              {error}
+              <button
+                onClick={() => setError('')}
+                className="ml-2 text-red-500 hover:text-red-700"
               >
-                {/* Separator Line */}
-                {index > 0 && (
-                  <div className="absolute top-0 left-0 right-0 h-px bg-[#e0e0e0]"></div>
-                )}
+                ×
+              </button>
+            </div>
+          )}
+          {loading ? (
+            <div className="text-center py-8 text-[#666]">Chargement...</div>
+          ) : (
+            <div className="space-y-0">
+              {filteredResources.length === 0 ? (
+                <div className="text-center py-8 text-[#666]">Aucune ressource trouvée</div>
+              ) : (
+                filteredResources.map((resource, index) => {
+                  const completed = getCompleted(resource);
+                  const favorite = resource.content?.favorite || false;
+                  return (
+                    <div
+                      key={resource.id}
+                      className={`group relative transition-all duration-200 ease-out ${
+                        deletingIds.includes(resource.id)
+                          ? 'opacity-0 -translate-x-4 scale-[0.98]'
+                          : 'opacity-100 translate-x-0 scale-100'
+                      }`}
+                    >
+                      {/* Separator Line */}
+                      {index > 0 && (
+                        <div className="absolute top-0 left-0 right-0 h-px bg-[#e0e0e0]"></div>
+                      )}
 
-                <div className="flex items-center gap-4 py-4 px-2 hover:bg-white/50 transition-colors">
-                  {/* Checkbox */}
-                  <button
-                    onClick={() => toggleTodo(todo.id)}
-                    className={`w-[26px] h-[26px] rounded-[2px] border-2 border-[#6c63ff] flex items-center justify-center flex-shrink-0 ${
-                      todo.completed ? 'bg-[#6c63ff]' : 'bg-transparent'
-                    }`}
-                  >
-                    {todo.completed && (
-                      <svg
-                        className="w-4 h-4 text-[#f7f7f7]"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    )}
-                  </button>
-
-                  {/* Todo Text with Heart and Description */}
-                  <div className="flex-1 flex flex-col gap-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p
-                        className={`text-xl uppercase font-medium ${
-                          todo.completed
-                            ? 'line-through text-[rgba(37,37,37,0.5)]'
-                            : 'text-[#252525]'
-                        }`}
-                      >
-                        {todo.text}
-                      </p>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Category Badge */}
-                        {todo.categoryId && (() => {
-                          const category = categories.find(c => c.id === Number(todo.categoryId));
-                          return category ? (
-                            <span
-                              className="inline-block px-3 py-1 rounded-full text-xs font-medium"
-                              style={{
-                                backgroundColor: category.backgroundColor || '#000000',
-                                color: category.textColor || '#FFFFFF',
-                              }}
-                            >
-                              {category.name}
-                            </span>
-                          ) : null;
-                        })()}
-                        {/* Favorite Heart */}
+                      <div className="flex items-center gap-4 py-4 px-2 hover:bg-white/50 transition-colors">
+                        {/* Checkbox */}
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(todo.id);
-                          }}
-                          className="flex items-center justify-center w-5 h-5 flex-shrink-0 hover:scale-110 transition-transform"
+                          onClick={() => toggleTodo(resource.id)}
+                          className={`w-[26px] h-[26px] rounded-[2px] border-2 border-[#6c63ff] flex items-center justify-center flex-shrink-0 ${
+                            completed ? 'bg-[#6c63ff]' : 'bg-transparent'
+                          }`}
                         >
-                          <svg
-                            className={`w-5 h-5 transition-colors ${
-                              todo.favorite ? 'text-red-500 fill-red-500' : 'text-[#c3c1e5]'
-                            }`}
-                            fill={todo.favorite ? 'currentColor' : 'none'}
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-                          </svg>
+                          {completed && (
+                            <svg
+                              className="w-4 h-4 text-[#f7f7f7]"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
                         </button>
+
+                        {/* Resource Text with Heart and Description */}
+                        <div className="flex-1 flex flex-col gap-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p
+                              className={`text-xl uppercase font-medium ${
+                                completed
+                                  ? 'line-through text-[rgba(37,37,37,0.5)]'
+                                  : 'text-[#252525]'
+                              }`}
+                            >
+                              {resource.title}
+                            </p>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {/* Category Badge */}
+                              {resource.category && (
+                                <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[#6c63ff] text-white">
+                                  {resource.category.name}
+                                </span>
+                              )}
+                              {/* Favorite Heart */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFavorite(resource.id);
+                                }}
+                                className="flex items-center justify-center w-5 h-5 flex-shrink-0 hover:scale-110 transition-transform"
+                              >
+                                <svg
+                                  className={`w-5 h-5 transition-colors ${
+                                    favorite ? 'text-red-500 fill-red-500' : 'text-[#c3c1e5]'
+                                  }`}
+                                  fill={favorite ? 'currentColor' : 'none'}
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          {/* Description */}
+                          {resource.content?.description && (
+                            <p
+                              className={`text-sm text-[#666] truncate ${
+                                completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
+                              }`}
+                              title={resource.content.description}
+                            >
+                              {resource.content.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Action Icons (visible on hover) */}
+                        <div className="flex gap-2 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Edit Icon */}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(resource.id);
+                            }}
+                            className="w-[18px] h-[18px] text-[#252525] hover:text-[#6c63ff] transition-colors"
+                          >
+                            <svg
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                          </button>
+
+                          {/* Delete Icon */}
+                          <button
+                            onClick={() => handleDelete(resource.id)}
+                            className="w-[18px] h-[18px] text-[#252525] hover:text-red-500 transition-colors"
+                          >
+                            <svg
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    {/* Description */}
-                    {todo.description && (
-                      <p
-                        className={`text-sm text-[#666] truncate ${
-                          todo.completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
-                        }`}
-                        title={todo.description}
-                      >
-                        {todo.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Action Icons (visible on hover) */}
-                  <div className="flex gap-2 items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* Edit Icon */}
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(todo.id);
-                      }}
-                      className="w-[18px] h-[18px] text-[#252525] hover:text-[#6c63ff] transition-colors"
-                    >
-                      <svg
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* Delete Icon */}
-                    <button
-                      onClick={() => handleDelete(todo.id)}
-                      className="w-[18px] h-[18px] text-[#252525] hover:text-red-500 transition-colors"
-                    >
-                      <svg
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         {/* Floating Add Button */}
@@ -541,7 +541,7 @@ export default function TodoListPage() {
             <button
               onClick={() => {
                 setIsFabMenuOpen(false);
-                setIsModalOpen(true);
+                navigate('/resources/new');
               }}
               className="px-4 py-2 rounded-[8px] bg-white shadow-lg border border-[#e5e7eb] text-sm text-[#252525] hover:bg-[#f3f4ff] transition transform origin-bottom-right translate-y-1 opacity-100"
             >
@@ -559,124 +559,6 @@ export default function TodoListPage() {
           </div>
         )}
       </div>
-
-      {/* Modal for Creating New Note */}
-      {isModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={handleCancel}
-        >
-          <div 
-            className="bg-white rounded-[16px] p-6 w-full max-w-md mx-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-[#252525]">
-                Créer une nouvelle ressource
-              </h2>
-              <button
-                onClick={handleCancel}
-                className="w-6 h-6 flex items-center justify-center text-[#252525] hover:text-[#6c63ff] transition-colors"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Input Fields */}
-            <div className="mb-6 space-y-4">
-              {/* Title Input with Heart */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Titre de la ressource"
-                  value={newNoteTitle}
-                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                  className="flex-1 h-12 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
-                  autoFocus
-                />
-                {/* Favorite Heart Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className="flex items-center justify-center w-12 h-12 rounded-[5px] border border-[#c3c1e5] hover:border-[#6c63ff] transition-colors flex-shrink-0"
-                >
-                  <svg
-                    className={`w-5 h-5 transition-colors ${
-                      isFavorite ? 'text-red-500 fill-red-500' : 'text-[#c3c1e5]'
-                    }`}
-                    fill={isFavorite ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Description Textarea */}
-              <div>
-                <textarea
-                  placeholder="Description"
-                  value={newNoteDescription}
-                  onChange={(e) => setNewNoteDescription(e.target.value)}
-                  rows={4}
-                  className="w-full rounded-[5px] border border-[#c3c1e5] px-4 py-3 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60 resize-none"
-                />
-              </div>
-
-              {/* Category Select */}
-              <div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full h-10 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60 bg-white"
-                >
-                  <option value="">Sélectionner une catégorie</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 justify-end">
-              <button
-                onClick={handleCancel}
-                className="px-6 py-2 rounded-[5px] border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium uppercase hover:bg-gray-50 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleCreateNote}
-                className="px-6 py-2 rounded-[5px] bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium uppercase hover:bg-[#5a52e0] transition-colors"
-              >
-                Créer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal for Creating New Category */}
       {isCategoryModalOpen && (
@@ -728,80 +610,6 @@ export default function TodoListPage() {
                 className="w-full h-12 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
                 autoFocus
               />
-
-              {/* Color Pickers */}
-              <div className="flex gap-4">
-                {/* Background Color Picker */}
-                <div className="flex-1 relative">
-                  <label className="block text-sm font-medium text-[#252525] mb-2">
-                    Couleur du fond
-                  </label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowBackgroundColorPicker(!showBackgroundColorPicker);
-                        setShowTextColorPicker(false);
-                      }}
-                      className="w-full h-10 rounded-[5px] border border-[#c3c1e5] flex items-center gap-2 px-3 hover:border-[#6c63ff] transition-colors"
-                      style={{ backgroundColor: categoryBackgroundColor }}
-                    >
-                      <div
-                        className="w-6 h-6 rounded border border-white/50"
-                        style={{ backgroundColor: categoryBackgroundColor }}
-                      ></div>
-                      <span className="text-sm text-[#252525]">{categoryBackgroundColor}</span>
-                    </button>
-                    {showBackgroundColorPicker && (
-                      <div className="absolute top-full mt-2 z-10">
-                        <div
-                          className="fixed inset-0"
-                          onClick={() => setShowBackgroundColorPicker(false)}
-                        ></div>
-                        <SketchPicker
-                          color={categoryBackgroundColor}
-                          onChange={(color) => setCategoryBackgroundColor(color.hex)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Text Color Picker */}
-                <div className="flex-1 relative">
-                  <label className="block text-sm font-medium text-[#252525] mb-2">
-                    Couleur du texte
-                  </label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowTextColorPicker(!showTextColorPicker);
-                        setShowBackgroundColorPicker(false);
-                      }}
-                      className="w-full h-10 rounded-[5px] border border-[#c3c1e5] flex items-center gap-2 px-3 hover:border-[#6c63ff] transition-colors bg-white"
-                    >
-                      <div
-                        className="w-6 h-6 rounded border border-gray-300"
-                        style={{ backgroundColor: categoryTextColor }}
-                      ></div>
-                      <span className="text-sm text-[#252525]">{categoryTextColor}</span>
-                    </button>
-                    {showTextColorPicker && (
-                      <div className="absolute top-full mt-2 z-10">
-                        <div
-                          className="fixed inset-0"
-                          onClick={() => setShowTextColorPicker(false)}
-                        ></div>
-                        <SketchPicker
-                          color={categoryTextColor}
-                          onChange={(color) => setCategoryTextColor(color.hex)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Action Buttons */}
@@ -823,128 +631,6 @@ export default function TodoListPage() {
         </div>
       )}
 
-      {/* Modal for Editing Note */}
-      {isEditModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={handleCancelEdit}
-        >
-          <div 
-            className="bg-white rounded-[16px] p-6 w-full max-w-md mx-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-[#252525]">
-                Modifier la ressource
-              </h2>
-              <button
-                onClick={handleCancelEdit}
-                className="w-6 h-6 flex items-center justify-center text-[#252525] hover:text-[#6c63ff] transition-colors"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Input Fields */}
-            <div className="mb-6 space-y-4">
-              {/* Title Input with Heart */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Titre de la ressource"
-                  value={newNoteTitle}
-                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleUpdateNote();
-                    }
-                  }}
-                  className="flex-1 h-12 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
-                  autoFocus
-                />
-                {/* Favorite Heart Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className="flex items-center justify-center w-12 h-12 rounded-[5px] border border-[#c3c1e5] hover:border-[#6c63ff] transition-colors flex-shrink-0"
-                >
-                  <svg
-                    className={`w-5 h-5 transition-colors ${
-                      isFavorite ? 'text-red-500 fill-red-500' : 'text-[#c3c1e5]'
-                    }`}
-                    fill={isFavorite ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Description Textarea */}
-              <div>
-                <textarea
-                  placeholder="Description"
-                  value={newNoteDescription}
-                  onChange={(e) => setNewNoteDescription(e.target.value)}
-                  rows={4}
-                  className="w-full rounded-[5px] border border-[#c3c1e5] px-4 py-3 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60 resize-none"
-                />
-              </div>
-
-              {/* Category Select */}
-              <div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full h-10 rounded-[5px] border border-[#c3c1e5] px-4 text-sm text-[#252525] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60 bg-white"
-                >
-                  <option value="">Sélectionner une catégorie</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 justify-end">
-              <button
-                onClick={handleCancelEdit}
-                className="px-6 py-2 rounded-[5px] border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium uppercase hover:bg-gray-50 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleUpdateNote}
-                className="px-6 py-2 rounded-[5px] bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium uppercase hover:bg-[#5a52e0] transition-colors"
-              >
-                Modifier
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
