@@ -17,6 +17,7 @@ services:
   backend:
     build: ./backend
     container_name: resource_app_back
+    restart: on-failure
     ports:
       - "3000:3000"
     environment:
