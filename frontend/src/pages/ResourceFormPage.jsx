@@ -120,7 +120,7 @@ export default function ResourceFormPage() {
         await resourceService.createResource(resourceData);
       }
 
-      navigate('/todos');
+      navigate('/resources');
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la sauvegarde');
     } finally {
@@ -389,7 +389,7 @@ export default function ResourceFormPage() {
           <div className="flex gap-4 justify-end mt-6">
             <button
               type="button"
-              onClick={() => navigate('/todos')}
+              onClick={() => navigate('/resources')}
               className="px-6 py-2 rounded-md border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium uppercase hover:bg-gray-50 transition-colors"
             >
               Annuler

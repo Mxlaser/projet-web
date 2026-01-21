@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import SignupPage from "../pages/SignupPage";
-import TodoListPage from "../pages/TodoListPage";
+import ResourceListPage from "../pages/ResourceListPage";
 import DashboardPage from "../pages/DashboardPage";
 import ResourceFormPage from "../pages/ResourceFormPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -14,10 +14,10 @@ export default function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route
-          path="/todos"
+          path="/resources"
           element={
             <ProtectedRoute>
-              <TodoListPage />
+              <ResourceListPage />
             </ProtectedRoute>
           }
         />

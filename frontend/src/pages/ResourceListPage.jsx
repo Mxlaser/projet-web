@@ -73,7 +73,7 @@ export default function ResourceListPage() {
     return resource.content?.completed || false;
   };
 
-  const toggleTodo = async (id) => {
+  const toggleResourceStatus = async (id) => {
     const resource = resources.find(r => r.id === id);
     if (!resource) return;
 

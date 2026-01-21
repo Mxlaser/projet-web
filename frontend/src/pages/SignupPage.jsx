@@ -21,7 +21,7 @@ export default function SignupPage() {
       // Après inscription, connecter automatiquement l'utilisateur
       const data = await authService.login(email, password);
       setToken(data.token);
-      navigate('/todos');
+      navigate('/resources');
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur d\'inscription');
     } finally {

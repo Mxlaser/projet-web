@@ -19,7 +19,7 @@ export default function LoginPage() {
     try {
       const data = await authService.login(email, password);
       setToken(data.token);
-      navigate('/todos');
+      navigate('/resources');
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur de connexion');
     } finally {
