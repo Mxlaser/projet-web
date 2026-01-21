@@ -1,23 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { login } from "../services/AuthService";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, setToken } = useAuth();
+  const { setToken } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,15 +23,20 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      const data = await login(email, password); // attend { token: "..." }
-      if (!data?.token) {
-        setError("Réponse API invalide : token manquant.");
-        return;
+
+      const data = await login(email, password);
+
+      const token =
+        data.token || data.accessToken || data.access_token;
+
+      if (!token) {
+        throw new Error("Token manquant dans la réponse API");
       }
-      setToken(data.token);
-      navigate("/dashboard", { replace: true }); 
+
+      setToken(token);
+      navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError("Connexion échouée. Vérifie tes identifiants ou l’API.");
+      setError("Connexion échouée. Vérifie tes identifiants.");
     } finally {
       setLoading(false);
     }
@@ -57,7 +55,6 @@ export default function LoginPage() {
           </span>
         </div>
 
-        {/* Titre */}
         <h1 className="text-4xl font-semibold text-[#252525] mt-6">
           Connexion
         </h1>
@@ -71,31 +68,32 @@ export default function LoginPage() {
             placeholder="email@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
-          />
-          <input
-            type="password"
-            placeholder="********************"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+            className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
           />
 
-          {/* ✅ message d’erreur */}
+          <input
+            type="password"
+            placeholder="*************"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+          />
+
           {error && (
-            <p className="text-sm text-red-600 text-center">{error}</p>
+            <p className="text-sm text-red-600 text-center">
+              {error}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-6 h-11 w-full max-w-xs mx-auto rounded-md bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium tracking-wide uppercase hover:bg-[#5a52e0] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-6 h-11 w-full max-w-xs mx-auto rounded-md bg-[#6c63ff] text-white text-sm font-medium uppercase hover:bg-[#5a52e0] disabled:opacity-60"
           >
             {loading ? "Connexion..." : "Valider"}
           </button>
         </form>
 
-        {/* Lien d'inscription */}
         <p className="mt-6 text-center text-xs italic text-[#cccccc]">
           Pas encore de compte ?{" "}
           <Link to="/signup" className="text-[#6c63ff] underline">
