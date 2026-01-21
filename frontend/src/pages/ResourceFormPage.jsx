@@ -288,14 +288,97 @@ export default function ResourceFormPage() {
                     </div>
                   );
                 })()}
-                <input
-                  type="file"
-                  onChange={(e) => setFile(e.target.files[0])}
-                  required={type === 'file' && !isEdit}
-                  className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
-                />
+                
+                {/* Input de fichier stylisé */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    id="file-input"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    required={type === 'file' && !isEdit}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="file-input"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#c3c1e5] rounded-lg cursor-pointer bg-white hover:bg-gray-50 hover:border-[#6c63ff] transition-colors duration-200"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg
+                        className="w-10 h-10 mb-3 text-[#6c63ff]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      <p className="mb-2 text-sm text-[#666]">
+                        <span className="font-semibold text-[#6c63ff]">Cliquez pour téléverser</span> ou glissez-déposez
+                      </p>
+                      <p className="text-xs text-[#999]">
+                        PNG, JPG, GIF, PDF (MAX. 5MB)
+                      </p>
+                    </div>
+                  </label>
+                  
+                  {/* Afficher le nom du fichier sélectionné */}
+                  {file && (
+                    <div className="mt-3 p-3 bg-[#6c63ff]/10 border border-[#6c63ff]/20 rounded-md flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <svg
+                          className="w-5 h-5 text-[#6c63ff] flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        <span className="text-sm text-[#252525] truncate" title={file.name}>
+                          {file.name}
+                        </span>
+                        <span className="text-xs text-[#666] flex-shrink-0">
+                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFile(null);
+                          const input = document.getElementById('file-input');
+                          if (input) input.value = '';
+                        }}
+                        className="ml-2 text-[#666] hover:text-red-500 transition-colors"
+                        title="Supprimer le fichier"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
                 {isEdit && (
-                  <p className="mt-1 text-xs text-[#666]">
+                  <p className="mt-2 text-xs text-[#666]">
                     Laissez vide pour conserver le fichier actuel
                   </p>
                 )}
