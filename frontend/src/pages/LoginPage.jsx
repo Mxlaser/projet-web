@@ -1,4 +1,32 @@
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { authService } from '../api/authService';
+
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { setToken } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const data = await authService.login(email, password);
+      setToken(data.token);
+      navigate('/resources');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur de connexion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f7f7f7] flex flex-col items-center justify-start">
       {/* Logo */}
@@ -16,32 +44,44 @@ export default function LoginPage() {
 
       {/* Formulaire */}
       <div className="mt-12 w-full max-w-xl px-4">
-        <form className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              {error}
+            </div>
+          )}
           <input
             type="email"
             placeholder="email@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
           />
           <input
             type="password"
             placeholder="********************"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
             className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
           />
 
           <button
             type="submit"
-            className="mt-6 h-11 w-full max-w-xs mx-auto rounded-md bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium tracking-wide uppercase hover:bg-[#5a52e0] transition-colors"
+            disabled={loading}
+            className="mt-6 h-11 w-full max-w-xs mx-auto rounded-md bg-[#6c63ff] text-[#f7f7f7] text-sm font-medium tracking-wide uppercase hover:bg-[#5a52e0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Valider
+            {loading ? 'Connexion...' : 'Valider'}
           </button>
         </form>
 
         {/* Lien d'inscription */}
         <p className="mt-6 text-center text-xs italic text-[#cccccc]">
           Pas encore de compte ?{" "}
-          <a href="/signup" className="text-[#6c63ff] underline">
+          <Link to="/signup" className="text-[#6c63ff] underline">
             Inscrivez-vous
-          </a>
+          </Link>
         </p>
       </div>
     </div>

@@ -9,3 +9,5 @@ logs/
 .vscode/
 .idea/
 docker-data/
+
+backend/uploads/

@@ -1,3 +1,4 @@
+![CI Status](https://github.com/Mxlaser/projet-web/actions/workflows/ci.yml/badge.svg)
 ## 📖 Description
 
 **Personal Resource Manager** est une application web conçue pour centraliser, organiser et retrouver facilement une grande variété de ressources personnelles et professionnelles.
