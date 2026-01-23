@@ -232,6 +232,27 @@ export default function ResourceListPage() {
 
           {/* Search and Filter Bar */}
           <div className="flex gap-4 items-start w-full">
+            {/* Calendar Button */}
+            <button
+              onClick={() => navigate('/calendar')}
+              className="w-[38px] h-[38px] bg-[#6c63ff] rounded-[5px] flex items-center justify-center hover:bg-[#5a52e0] transition-colors"
+              title="Voir le calendrier"
+            >
+              <svg
+                className="w-5 h-5 text-[#f7f7f7]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+
             {/* Search Input */}
             <div className="flex-1 relative">
               <input

@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 exports.createResource = async (req, res) => {
   try {
-    const { title, type, categoryId, tags } = req.body;
+    const { title, type, categoryId, tags, createdAt } = req.body;
     const userId = req.user.userId;
 
     let contentData = req.body.content;
@@ -29,6 +29,12 @@ exports.createResource = async (req, res) => {
       tagsToConnect = tagList.map(t => ({ where: { name: t }, create: { name: t } }));
     }
 
+    // Permettre de définir une date de création personnalisée
+    let createdAtDate = createdAt ? new Date(createdAt) : undefined;
+    if (createdAtDate && isNaN(createdAtDate.getTime())) {
+      createdAtDate = undefined; // Date invalide, utiliser la date par défaut
+    }
+
     const resource = await prisma.resource.create({
       data: {
         title,
@@ -36,7 +42,8 @@ exports.createResource = async (req, res) => {
         content: contentData,
         userId,
         categoryId: categoryId ? parseInt(categoryId) : null,
-        tags: { connectOrCreate: tagsToConnect }
+        tags: { connectOrCreate: tagsToConnect },
+        ...(createdAtDate && { createdAt: createdAtDate })
       },
       include: { tags: true, category: true }
     });
