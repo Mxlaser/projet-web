@@ -5,24 +5,30 @@ import { categoryService } from '../api/categoryService';
 import { api } from '../api/axios';
 import { useTheme } from '../context/ThemeContext';
 
-// Fonction pour obtenir l'URL complète d'un fichier
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return null;
   const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  // S'assurer que fileUrl commence par / si ce n'est pas déjà une URL complète
   if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
     return fileUrl;
   }
-  // Ajouter le / au début si nécessaire
   const normalizedUrl = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
   return `${baseURL}${normalizedUrl}`;
 };
 
-// Fonction pour vérifier si un fichier est une image
 const isImageFile = (fileName) => {
   if (!fileName) return false;
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
   return imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 };
 
 
@@ -47,7 +53,6 @@ export default function ResourceListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Charger les ressources et catégories au montage
   useEffect(() => {
     loadData();
   }, []);
@@ -68,34 +73,6 @@ export default function ResourceListPage() {
     }
   };
 
-  // Pour les ressources, on utilise le champ content.completed si disponible, sinon false
-  const getCompleted = (resource) => {
-    return resource.content?.completed || false;
-  };
-
-  const toggleResourceStatus = async (id) => {
-    const resource = resources.find(r => r.id === id);
-    if (!resource) return;
-
-    const newCompleted = !getCompleted(resource);
-    const updatedContent = {
-      ...resource.content,
-      completed: newCompleted,
-    };
-
-    try {
-      await resourceService.updateResource(id, {
-        title: resource.title,
-        type: resource.type,
-        content: updatedContent,
-        categoryId: resource.categoryId,
-        tags: resource.tags?.map(t => t.name) || [],
-      });
-      await loadData();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la mise à jour');
-    }
-  };
 
   const toggleFavorite = async (id) => {
     const resource = resources.find(r => r.id === id);
@@ -176,7 +153,6 @@ export default function ResourceListPage() {
     setIsCategoryModalOpen(false);
   };
 
-  // Récupérer tous les tags uniques
   const allTags = useMemo(() => {
     const tagSet = new Set();
     resources.forEach(resource => {
@@ -186,25 +162,16 @@ export default function ResourceListPage() {
   }, [resources]);
 
   const filteredResources = resources.filter(resource => {
-    // Filtre par statut (all/active/completed)
-    const completed = getCompleted(resource);
-    let matchesStatus = true;
-    if (filter === 'completed') matchesStatus = completed;
-    if (filter === 'active') matchesStatus = !completed;
-
-    // Filtre par catégorie
     let matchesCategory = true;
     if (selectedCategoryId !== null) {
       matchesCategory = resource.categoryId === selectedCategoryId;
     }
 
-    // Filtre par tag
     let matchesTag = true;
     if (selectedTag !== null) {
       matchesTag = resource.tags?.some(tag => tag.name === selectedTag) || false;
     }
 
-    // Filtre par recherche textuelle
     let matchesSearch = true;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -217,7 +184,7 @@ export default function ResourceListPage() {
       matchesSearch = titleMatch || descriptionMatch || urlMatch || fileNameMatch || categoryMatch || tagsMatch;
     }
 
-    return matchesStatus && matchesCategory && matchesTag && matchesSearch;
+    return matchesCategory && matchesTag && matchesSearch;
   });
 
   return (
@@ -289,7 +256,7 @@ export default function ResourceListPage() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="bg-[#6c63ff] text-[#f7f7f7] text-lg font-medium uppercase px-4 py-2 rounded-[5px] h-[38px] flex items-center gap-2 hover:bg-[#5a52e0] transition-colors"
               >
-                {filter === 'all' ? 'all' : filter === 'active' ? 'active' : 'completed'}
+                all
                 <svg
                   className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
                   fill="none"
@@ -322,66 +289,6 @@ export default function ResourceListPage() {
                     <div className="flex items-center justify-between">
                       <span>All</span>
                       {filter === 'all' && (
-                        <svg
-                          className="w-4 h-4 text-[#6c63ff]"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFilter('active');
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      filter === 'active'
-                        ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                        : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>Active</span>
-                      {filter === 'active' && (
-                        <svg
-                          className="w-4 h-4 text-[#6c63ff]"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFilter('completed');
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      filter === 'completed'
-                        ? 'bg-[rgba(108,99,255,0.1)] text-[#6c63ff]'
-                        : 'text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>Completed</span>
-                      {filter === 'completed' && (
                         <svg
                           className="w-4 h-4 text-[#6c63ff]"
                           fill="none"
@@ -635,7 +542,6 @@ export default function ResourceListPage() {
                 <div className="text-center py-8 text-[#666] dark:text-[#999]">Aucune ressource trouvée</div>
               ) : (
                 filteredResources.map((resource, index) => {
-                  const completed = getCompleted(resource);
                   const favorite = resource.content?.favorite || false;
                   return (
                     <div
@@ -655,39 +561,12 @@ export default function ResourceListPage() {
                         className="flex items-center gap-4 py-4 px-2 hover:bg-white/50 dark:hover:bg-[#2a2a2a]/50 transition-colors cursor-pointer"
                         onClick={() => handleViewResource(resource)}
                       >
-                        {/* Checkbox */}
-                        <button
-                          onClick={() => toggleResourceStatus(resource.id)}
-                          className={`w-[26px] h-[26px] rounded-[2px] border-2 border-[#6c63ff] flex items-center justify-center flex-shrink-0 ${
-                            completed ? 'bg-[#6c63ff]' : 'bg-transparent'
-                          }`}
-                        >
-                          {completed && (
-                            <svg
-                              className="w-4 h-4 text-[#f7f7f7]"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </button>
 
                         {/* Resource Text with Heart and Description */}
                         <div className="flex-1 flex flex-col gap-1">
                           <div className="flex items-center justify-between gap-2">
                             <p
-                              className={`text-xl uppercase font-medium dark:text-[#f7f7f7] ${
-                                completed
-                                  ? 'line-through text-[rgba(37,37,37,0.5)]'
-                                  : 'text-[#252525]'
-                              }`}
+                              className="text-xl uppercase font-medium text-[#252525] dark:text-[#f7f7f7]"
                             >
                               {resource.title}
                             </p>
@@ -724,14 +603,15 @@ export default function ResourceListPage() {
                               </button>
                             </div>
                           </div>
-                          {/* Description, Lien et Fichier */}
+                          {/* Date */}
+                          <div className="text-xs text-[#888] dark:text-[#777]">
+                            {formatDate(resource.createdAt)}
+                          </div>
                           {resource.type === 'link' ? (
                             <div className="flex flex-col gap-1">
                               {resource.content?.description && (
                                 <p
-                                  className={`text-sm text-[#666] truncate ${
-                                    completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
-                                  }`}
+                                  className="text-sm text-[#666] truncate"
                                   title={resource.content.description}
                                 >
                                   {resource.content.description}
@@ -748,9 +628,7 @@ export default function ResourceListPage() {
                                     href={formattedUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`text-sm text-[#6c63ff] truncate hover:underline ${
-                                      completed ? 'line-through text-[rgba(108,99,255,0.5)]' : ''
-                                    }`}
+                                    className="text-sm text-[#6c63ff] truncate hover:underline"
                                     title={formattedUrl}
                                     onClick={(e) => e.stopPropagation()}
                                   >
@@ -763,9 +641,7 @@ export default function ResourceListPage() {
                             <div className="flex flex-col gap-2">
                               {resource.content?.description && (
                                 <p
-                                  className={`text-sm text-[#666] truncate ${
-                                    completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
-                                  }`}
+                                  className="text-sm text-[#666] truncate"
                                   title={resource.content.description}
                                 >
                                   {resource.content.description}
@@ -841,9 +717,7 @@ export default function ResourceListPage() {
                           ) : (
                             resource.content?.description && (
                               <p
-                                className={`text-sm text-[#666] truncate ${
-                                  completed ? 'line-through text-[rgba(102,102,102,0.5)]' : ''
-                                }`}
+                                className="text-sm text-[#666] truncate"
                                 title={resource.content.description}
                               >
                                 {resource.content.description}
@@ -998,6 +872,14 @@ export default function ResourceListPage() {
                 <p className="text-sm text-[#252525] dark:text-[#e5e5e5] capitalize">{selectedResource.type}</p>
               </div>
 
+              {/* Date */}
+              <div>
+                <span className="text-xs font-medium text-[#666] dark:text-[#999] uppercase">Date</span>
+                <p className="text-sm text-[#252525] dark:text-[#e5e5e5] mt-1">
+                  {formatDate(selectedResource.createdAt) || '—'}
+                </p>
+              </div>
+
               {/* Category */}
               {selectedResource.category && (
                 <div>
@@ -1114,23 +996,6 @@ export default function ResourceListPage() {
                 );
               })()}
 
-              {/* Status */}
-              <div>
-                <span className="text-xs font-medium text-[#666] uppercase">Statut</span>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className={`text-sm ${getCompleted(selectedResource) ? 'text-[rgba(37,37,37,0.5)] dark:text-[rgba(247,247,247,0.5)] line-through' : 'text-[#252525] dark:text-[#e5e5e5]'}`}>
-                    {getCompleted(selectedResource) ? 'Terminé' : 'En cours'}
-                  </span>
-                  {selectedResource.content?.favorite && (
-                    <span className="text-sm text-red-500 flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                      Favori
-                    </span>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Action Buttons */}

@@ -4,20 +4,16 @@ import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
 import { api } from '../api/axios';
 
-// Fonction pour obtenir l'URL complète d'un fichier
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return null;
   const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  // S'assurer que fileUrl commence par / si ce n'est pas déjà une URL complète
   if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
     return fileUrl;
   }
-  // Ajouter le / au début si nécessaire
   const normalizedUrl = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
   return `${baseURL}${normalizedUrl}`;
 };
 
-// Fonction pour vérifier si un fichier est une image
 const isImageFile = (fileName) => {
   if (!fileName) return false;
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
@@ -89,13 +85,10 @@ export default function ResourceFormPage() {
       const contentData = {
         description,
       };
-      
-      // Si c'est un lien, ajouter l'URL au contenu
       if (type === 'link' && url) {
         contentData.url = url;
       }
 
-      // S'assurer que le type est "file" si un fichier est uploadé
       const finalType = file ? 'file' : type;
 
       const resourceData = {
@@ -114,7 +107,7 @@ export default function ResourceFormPage() {
           content: contentData,
           categoryId: categoryId ? Number(categoryId) : null,
           tags: tagsArray,
-          file, // Inclure le fichier si présent
+          file, 
         });
       } else {
         await resourceService.createResource(resourceData);
