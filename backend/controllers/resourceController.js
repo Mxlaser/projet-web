@@ -103,25 +103,21 @@ exports.updateResource = async (req, res) => {
 
     if (!existingResource) return res.status(404).json({ error: "Ressource introuvable" });
 
-    // Parser le contenu si c'est une string
     let contentData = content;
     if (typeof contentData === 'string') {
       try {
         contentData = JSON.parse(contentData);
       } catch(e) {
-        // Si le parsing échoue, garder la valeur originale ou utiliser un objet vide
         contentData = {};
       }
     }
     
-    // Si contentData n'est pas un objet, initialiser avec le contenu existant
     if (!contentData || typeof contentData !== 'object') {
       contentData = existingResource.content && typeof existingResource.content === 'object' 
         ? { ...existingResource.content } 
         : {};
     }
 
-    // Si un nouveau fichier est uploadé, mettre à jour le contenu
     if (req.file) {
       contentData = {
         ...contentData,
@@ -129,7 +125,6 @@ exports.updateResource = async (req, res) => {
         originalName: req.file.originalname
       };
     } else if (existingResource.content && typeof existingResource.content === 'object') {
-      // Conserver les informations du fichier existant si aucun nouveau fichier n'est uploadé
       if (existingResource.content.fileUrl) {
         contentData.fileUrl = existingResource.content.fileUrl;
       }
@@ -138,7 +133,6 @@ exports.updateResource = async (req, res) => {
       }
     }
 
-    // Parser les tags si c'est une string
     let tagsArray = tags;
     if (typeof tags === 'string') {
       try {

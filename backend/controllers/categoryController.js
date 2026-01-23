@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// 1. Lister toutes les catégories (Pour le menu déroulant du Front)
 exports.getAllCategories = async (req, res) => {
   try {
     const categories = await prisma.category.findMany({
@@ -13,7 +12,6 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
-// 2. Créer une catégorie (Utile pour l'admin ou le seed)
 exports.createCategory = async (req, res) => {
   try {
     const { name } = req.body;

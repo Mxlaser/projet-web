@@ -18,7 +18,6 @@ export default function SignupPage() {
 
     try {
       await authService.register(email, password);
-      // Après inscription, connecter automatiquement l'utilisateur
       const data = await authService.login(email, password);
       setToken(data.token);
       navigate('/resources');

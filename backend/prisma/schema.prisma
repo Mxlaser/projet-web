@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "linux-musl"]
@@ -10,48 +8,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. Modèle Utilisateur
 model User {
   id        Int        @id @default(autoincrement())
   email     String     @unique
   password  String
   createdAt DateTime   @default(now())
-  resources Resource[] // Relation : Un user a plusieurs ressources
+  resources Resource[]
 }
 
-// 2. Modèle Ressource (Lien, Note, etc.)
 model Resource {
   id          Int       @id @default(autoincrement())
   title       String
-  type        String    // Ex: "LINK", "NOTE", "CONTACT"
+  type        String
   
-  // L'astuce : On stocke tout ici (url, texte, téléphone...)
   content     Json      
   
   isFavorite  Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // Relations
   userId      Int
   user        User      @relation(fields: [userId], references: [id])
   
-  categoryId  Int?      // Optionnel au début
+  categoryId  Int?
   category    Category? @relation(fields: [categoryId], references: [id])
 
-  tags        Tag[]     // Relation Many-to-Many automatique
+  tags        Tag[]
 }
 
-// 3. Modèle Catégorie
 model Category {
   id        Int        @id @default(autoincrement())
   name      String     @unique
   resources Resource[]
 }
 
-// 4. Modèle Tag
 model Tag {
   id        Int        @id @default(autoincrement())
   name      String     @unique
-  resources Resource[] // Prisma gère la table de liaison tout seul
+  resources Resource[]
 }

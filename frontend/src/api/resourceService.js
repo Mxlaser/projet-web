@@ -14,7 +14,6 @@ export const resourceService = {
   createResource: async (resourceData) => {
     const formData = new FormData();
     
-    // Ajouter les champs texte
     formData.append('title', resourceData.title);
     formData.append('type', resourceData.type || 'note');
     if (resourceData.categoryId) {
@@ -27,7 +26,6 @@ export const resourceService = {
       formData.append('tags', JSON.stringify(resourceData.tags));
     }
     
-    // Ajouter le fichier si présent
     if (resourceData.file) {
       formData.append('file', resourceData.file);
     }
@@ -41,11 +39,9 @@ export const resourceService = {
   },
 
   updateResource: async (id, resourceData) => {
-    // Si un fichier est présent, utiliser FormData
     if (resourceData.file) {
       const formData = new FormData();
       
-      // Ajouter les champs texte
       formData.append('title', resourceData.title);
       formData.append('type', resourceData.type || 'note');
       if (resourceData.categoryId) {
@@ -58,7 +54,6 @@ export const resourceService = {
         formData.append('tags', JSON.stringify(resourceData.tags));
       }
       
-      // Ajouter le fichier
       formData.append('file', resourceData.file);
 
       const response = await api.put(`/api/resources/${id}`, formData, {
@@ -68,7 +63,6 @@ export const resourceService = {
       });
       return response.data;
     } else {
-      // Sinon, envoyer en JSON normal
       const response = await api.put(`/api/resources/${id}`, {
         title: resourceData.title,
         type: resourceData.type,
