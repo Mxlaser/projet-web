@@ -4,6 +4,7 @@ import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
 import { api } from '../api/axios';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return null;
@@ -35,14 +36,18 @@ const formatDate = (dateString) => {
 export default function ResourceListPage() {
   const navigate = useNavigate();
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { logout } = useAuth();
   const [resources, setResources] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
   const [isTagFilterOpen, setIsTagFilterOpen] = useState(false);
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -172,6 +177,28 @@ export default function ResourceListPage() {
       matchesTag = resource.tags?.some(tag => tag.name === selectedTag) || false;
     }
 
+    let matchesDate = true;
+    if (startDate || endDate) {
+      const resourceDate = new Date(resource.createdAt);
+      resourceDate.setHours(0, 0, 0, 0);
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        if (resourceDate < start) {
+          matchesDate = false;
+        }
+      }
+      
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (resourceDate > end) {
+          matchesDate = false;
+        }
+      }
+    }
+
     let matchesSearch = true;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -184,7 +211,7 @@ export default function ResourceListPage() {
       matchesSearch = titleMatch || descriptionMatch || urlMatch || fileNameMatch || categoryMatch || tagsMatch;
     }
 
-    return matchesCategory && matchesTag && matchesSearch;
+    return matchesCategory && matchesTag && matchesDate && matchesSearch;
   });
 
   return (
@@ -194,6 +221,7 @@ export default function ResourceListPage() {
         if (isDropdownOpen) setIsDropdownOpen(false);
         if (isCategoryFilterOpen) setIsCategoryFilterOpen(false);
         if (isTagFilterOpen) setIsTagFilterOpen(false);
+        if (isDateFilterOpen) setIsDateFilterOpen(false);
         if (isFabMenuOpen) setIsFabMenuOpen(false);
       }}
     >
@@ -206,6 +234,27 @@ export default function ResourceListPage() {
 
           {/* Search and Filter Bar */}
           <div className="flex gap-4 items-start w-full">
+            {/* Calendar Button */}
+            <button
+              onClick={() => navigate('/calendar')}
+              className="w-[38px] h-[38px] bg-[#6c63ff] rounded-[5px] flex items-center justify-center hover:bg-[#5a52e0] transition-colors"
+              title="Voir le calendrier"
+            >
+              <svg
+                className="w-5 h-5 text-[#f7f7f7]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+
             {/* Search Input */}
             <div className="flex-1 relative">
               <input
@@ -344,6 +393,30 @@ export default function ResourceListPage() {
                   />
                 </svg>
               )}
+            </button>
+
+            {/* Logout Button */}
+            <button 
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              className="w-[38px] h-[38px] bg-red-500 hover:bg-red-600 rounded-[5px] flex items-center justify-center transition-colors"
+              title="Déconnexion"
+            >
+              <svg
+                className="w-5 h-5 text-[#f7f7f7]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
             </button>
           </div>
 
@@ -503,12 +576,93 @@ export default function ResourceListPage() {
               )}
             </div>
 
+            {/* Filtre Date */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => {
+                  setIsDateFilterOpen(!isDateFilterOpen);
+                  setIsCategoryFilterOpen(false);
+                  setIsTagFilterOpen(false);
+                }}
+                className={`px-4 py-2 rounded-[5px] text-sm font-medium transition-colors flex items-center gap-2 ${
+                  startDate || endDate
+                    ? 'bg-[#6c63ff] text-[#f7f7f7]'
+                    : 'bg-white dark:bg-[#2a2a2a] border border-[#e5e7eb] dark:border-[#404040] text-[#374151] dark:text-[#e5e5e5] hover:bg-gray-50 dark:hover:bg-[#333333]'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {startDate || endDate
+                  ? (startDate && endDate
+                      ? `${formatDate(startDate)} - ${formatDate(endDate)}`
+                      : startDate
+                      ? `À partir du ${formatDate(startDate)}`
+                      : `Jusqu'au ${formatDate(endDate)}`)
+                  : 'Période'}
+                <svg
+                  className={`w-3 h-3 transition-transform ${isDateFilterOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isDateFilterOpen && (
+                <div className="absolute top-full mt-1 left-0 bg-white dark:bg-[#2a2a2a] border border-[#e5e7eb] dark:border-[#404040] rounded-[5px] shadow-md p-4 z-20 min-w-[300px]">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-[#666] dark:text-[#999] mb-1">
+                        Date de début
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full h-10 rounded-[5px] border border-[#e5e7eb] dark:border-[#404040] px-3 text-sm text-[#252525] dark:text-[#f7f7f7] dark:bg-[#333333] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#666] dark:text-[#999] mb-1">
+                        Date de fin
+                      </label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        min={startDate || undefined}
+                        className="w-full h-10 rounded-[5px] border border-[#e5e7eb] dark:border-[#404040] px-3 text-sm text-[#252525] dark:text-[#f7f7f7] dark:bg-[#333333] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
+                      />
+                    </div>
+                    {(startDate || endDate) && (
+                      <button
+                        onClick={() => {
+                          setStartDate('');
+                          setEndDate('');
+                        }}
+                        className="w-full px-3 py-2 rounded-[5px] text-sm text-[#666] dark:text-[#999] hover:text-[#252525] dark:hover:text-[#f7f7f7] hover:bg-gray-100 dark:hover:bg-[#333333] transition-colors flex items-center justify-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Réinitialiser les dates
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Boutons pour réinitialiser les filtres */}
-            {(selectedCategoryId !== null || selectedTag !== null) && (
+            {(selectedCategoryId !== null || selectedTag !== null || startDate || endDate) && (
               <button
                 onClick={() => {
                   setSelectedCategoryId(null);
                   setSelectedTag(null);
+                  setStartDate('');
+                  setEndDate('');
                 }}
                 className="px-3 py-2 rounded-[5px] text-sm text-[#666] dark:text-[#999] hover:text-[#252525] dark:hover:text-[#f7f7f7] hover:bg-gray-100 dark:hover:bg-[#333333] transition-colors flex items-center gap-1"
               >

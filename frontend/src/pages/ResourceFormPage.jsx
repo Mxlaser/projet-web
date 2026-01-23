@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
 import { api } from '../api/axios';
@@ -23,7 +23,9 @@ const isImageFile = (fileName) => {
 export default function ResourceFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isEdit = !!id;
+  const customDate = searchParams.get('date');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -100,6 +102,11 @@ export default function ResourceFormPage() {
         file,
       };
 
+      // Ajouter la date personnalisée si fournie (pour création depuis le calendrier)
+      if (!isEdit && customDate) {
+        resourceData.createdAt = customDate;
+      }
+
       if (isEdit) {
         await resourceService.updateResource(id, {
           title,
@@ -113,7 +120,8 @@ export default function ResourceFormPage() {
         await resourceService.createResource(resourceData);
       }
 
-      navigate('/resources');
+      // Rediriger vers le calendrier si on vient du calendrier, sinon vers la liste
+      navigate(customDate ? '/calendar' : '/resources');
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la sauvegarde');
     } finally {

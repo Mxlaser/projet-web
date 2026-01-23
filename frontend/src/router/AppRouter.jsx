@@ -5,6 +5,7 @@ import SignupPage from "../pages/SignupPage";
 import ResourceListPage from "../pages/ResourceListPage";
 import DashboardPage from "../pages/DashboardPage";
 import ResourceFormPage from "../pages/ResourceFormPage";
+import CalendarPage from "../pages/CalendarPage";
 import ProtectedRoute from "./ProtectedRoute";
 
 export default function AppRouter() {
@@ -42,6 +43,14 @@ export default function AppRouter() {
           element={
             <ProtectedRoute>
               <ResourceFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute>
+              <CalendarPage />
             </ProtectedRoute>
           }
         />

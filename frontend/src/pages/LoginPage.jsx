@@ -55,6 +55,14 @@ export default function LoginPage() {
             placeholder="email@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (email && password) {
+                  handleSubmit(e);
+                }
+              }
+            }}
             required
             className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
           />
@@ -63,6 +71,14 @@ export default function LoginPage() {
             placeholder="********************"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (email && password && !loading) {
+                  handleSubmit(e);
+                }
+              }
+            }}
             required
             className="w-full h-10 rounded-md border border-[#c3c1e5] px-4 text-sm text-[#252525] placeholder:text-[#c3c1e5] focus:outline-none focus:border-[#6c63ff] focus:ring-2 focus:ring-[#6c63ff]/60"
           />

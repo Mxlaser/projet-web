@@ -25,6 +25,9 @@ export const resourceService = {
     if (resourceData.tags && Array.isArray(resourceData.tags)) {
       formData.append('tags', JSON.stringify(resourceData.tags));
     }
+    if (resourceData.createdAt) {
+      formData.append('createdAt', resourceData.createdAt);
+    }
     
     if (resourceData.file) {
       formData.append('file', resourceData.file);
