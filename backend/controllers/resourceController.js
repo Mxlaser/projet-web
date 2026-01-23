@@ -57,24 +57,56 @@ exports.createResource = async (req, res) => {
 };
 
 exports.getAllResources = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-
-    const resources = await prisma.resource.findMany({
-      where: { userId },
-      include: {
-        tags: true,
-        category: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json(resources);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-};
+    try {
+      const userId = req.user.userId;
+      const { type, category, search, tag } = req.query;
+  
+      const whereClause = {
+        userId: userId 
+      };
+  
+      if (type) {
+        whereClause.type = type;
+      }
+  
+      if (category) {
+        whereClause.category = {
+          name: category
+        };
+      }
+  
+      if (tag) {
+        whereClause.tags = {
+          some: {
+            name: tag
+          }
+        };
+      }
+  
+      if (search) {
+        whereClause.title = {
+          contains: search,
+          mode: 'insensitive' 
+        };
+      }
+  
+      const resources = await prisma.resource.findMany({
+        where: whereClause,
+        include: {
+          tags: true,
+          category: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+  
+      res.json(resources);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Erreur lors de la récupération des ressources" });
+    }
+  };
   
 exports.getResourceById = async (req, res) => {
   try {
