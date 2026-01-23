@@ -8,6 +8,7 @@ exports.getAllCategories = async (req, res) => {
     });
     res.json(categories);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Erreur récupération catégories" });
   }
 };

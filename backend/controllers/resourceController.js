@@ -12,6 +12,7 @@ exports.createResource = async (req, res) => {
       try {
         contentData = JSON.parse(contentData);
       } catch(e) {
+        console.error("Erreur de parsing JSON:", e);
       }
     }
     
@@ -70,6 +71,7 @@ exports.getAllResources = async (req, res) => {
 
     res.json(resources);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
@@ -94,6 +96,7 @@ exports.getResourceById = async (req, res) => {
 
     res.json(resource);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
@@ -115,6 +118,7 @@ exports.updateResource = async (req, res) => {
       try {
         contentData = JSON.parse(contentData);
       } catch(e) {
+        console.error(e);
         contentData = {};
       }
     }
@@ -145,6 +149,7 @@ exports.updateResource = async (req, res) => {
       try {
         tagsArray = JSON.parse(tags);
       } catch(e) {
+        console.error(e);
         tagsArray = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
       }
     }
@@ -189,6 +194,7 @@ exports.deleteResource = async (req, res) => {
 
     res.json({ message: "Supprimé avec succès" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Erreur suppression" });
   }
 };
