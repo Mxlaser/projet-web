@@ -619,7 +619,6 @@ export default function ResourceListPage() {
                               )}
                               {resource.content?.url && (() => {
                                 const url = resource.content.url;
-                                // S'assurer que l'URL est valide et externe
                                 const formattedUrl = url && !url.startsWith('http://') && !url.startsWith('https://') 
                                   ? `https://${url}` 
                                   : url;
@@ -650,11 +649,9 @@ export default function ResourceListPage() {
                               {(() => {
                                 const fileUrl = getFileUrl(resource.content.fileUrl);
                                 const fileName = resource.content.originalName || resource.content.fileUrl?.split('/').pop() || 'Fichier';
-                                // Vérifier si c'est une image en utilisant le nom de fichier ou l'extension dans l'URL
                                 const fileUrlForCheck = resource.content.fileUrl || '';
                                 const isImage = isImageFile(fileName) || isImageFile(fileUrlForCheck);
                                 
-                                // Debug: afficher l'URL dans la console
                                 console.log('File URL Debug:', {
                                   original: resource.content.fileUrl,
                                   generated: fileUrl,
@@ -676,7 +673,6 @@ export default function ResourceListPage() {
                                         }}
                                         onError={(e) => {
                                           console.error('Erreur de chargement de l\'image:', fileUrl);
-                                          // Si l'image ne charge pas, remplacer par un lien
                                           const parent = e.target.parentElement;
                                           e.target.style.display = 'none';
                                           if (!parent.querySelector('.file-fallback-link')) {
@@ -959,7 +955,6 @@ export default function ResourceListPage() {
                             }}
                             onError={(e) => {
                               console.error('Erreur de chargement de l\'image dans la modal:', fileUrl);
-                              // Si l'image ne charge pas, masquer l'image
                               e.target.style.display = 'none';
                             }}
                             style={{ cursor: 'pointer' }}
