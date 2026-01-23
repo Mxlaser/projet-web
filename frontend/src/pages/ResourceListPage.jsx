@@ -4,6 +4,7 @@ import { resourceService } from '../api/resourceService';
 import { categoryService } from '../api/categoryService';
 import { api } from '../api/axios';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return null;
@@ -35,6 +36,7 @@ const formatDate = (dateString) => {
 export default function ResourceListPage() {
   const navigate = useNavigate();
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { logout } = useAuth();
   const [resources, setResources] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -391,6 +393,30 @@ export default function ResourceListPage() {
                   />
                 </svg>
               )}
+            </button>
+
+            {/* Logout Button */}
+            <button 
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              className="w-[38px] h-[38px] bg-red-500 hover:bg-red-600 rounded-[5px] flex items-center justify-center transition-colors"
+              title="Déconnexion"
+            >
+              <svg
+                className="w-5 h-5 text-[#f7f7f7]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
             </button>
           </div>
 
