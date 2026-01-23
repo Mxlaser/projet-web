@@ -20,6 +20,7 @@ exports.register = async (req, res) => {
 
         res.status(201).json({ message: "Utilisateur créé", user: { id: user.id, email: user.email } });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Erreur inscription" });
     }
 };
@@ -36,6 +37,7 @@ exports.login = async (req, res) => {
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ token, user: { id: user.id, email: user.email } });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Erreur connexion" });
     }
 };
@@ -48,6 +50,7 @@ exports.getMe = async (req, res) => {
         });
         res.json(user);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Erreur récupération profil" });
     }
 };

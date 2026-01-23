@@ -27,7 +27,7 @@ if (!fs.existsSync(uploadsPath)) {
 }
 
 app.use('/uploads', express.static(uploadsPath, {
-  setHeaders: (res, filePath) => {
+  setHeaders: (res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'GET');
   }
